@@ -14,23 +14,23 @@ interface StatsClientProps {
 }
 
 export function StatsClient({ logs, categories }: StatsClientProps) {
-    
+
     // Filter for current month
     const currentMonthLogs = useMemo(() => {
         const now = new Date();
         const start = startOfMonth(now);
         const end = endOfMonth(now);
-        
+
         return logs.filter(log => {
-             const logDate = new Date(log.date);
-             return isWithinInterval(logDate, { start, end });
+            const logDate = new Date(log.date);
+            return isWithinInterval(logDate, { start, end });
         });
     }, [logs]);
 
     // KPI Calculations
     const totalLogs = currentMonthLogs.length;
     const totalExpenses = currentMonthLogs.reduce((sum, log) => sum + (log.amount || 0), 0);
-    
+
     // Chart Data: Logs by Category
     const categoryData = useMemo(() => {
         const counts: Record<string, number> = {};
@@ -54,7 +54,7 @@ export function StatsClient({ logs, categories }: StatsClientProps) {
     return (
         <div className="flex flex-col h-full w-full bg-muted/10">
             <TopBar title="Statistics" />
-            
+
             <div className="flex-1 overflow-y-auto p-4 pb-24 space-y-6">
                 <div className="flex items-center justify-between">
                     <h2 className="text-lg font-semibold">This Month</h2>
@@ -89,7 +89,7 @@ export function StatsClient({ logs, categories }: StatsClientProps) {
                         <CardTitle className="text-base">Activity by Category</CardTitle>
                     </CardHeader>
                     <CardContent className="flex-1 min-h-[300px]">
-                         {categoryData.length > 0 ? (
+                        {categoryData.length > 0 ? (
                             <ResponsiveContainer width="100%" height={300}>
                                 <PieChart>
                                     <Pie
@@ -105,8 +105,8 @@ export function StatsClient({ logs, categories }: StatsClientProps) {
                                             <Cell key={`cell-${index}`} fill={entry.color} strokeWidth={0} />
                                         ))}
                                     </Pie>
-                                    <RechartsTooltip 
-                                        formatter={(value: number) => [value, 'Logs']}
+                                    <RechartsTooltip
+                                        formatter={(value: any) => [value, 'Logs']}
                                         contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
                                     />
                                     <Legend iconType="circle" layout="horizontal" verticalAlign="bottom" align="center" />
