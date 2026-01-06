@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { TopBar } from '@/components/layout/TopBar';
 import { FieldDefinition, FieldType, Category } from '@/lib/types';
-import { getFieldDefinitions, createFieldDefinition, deleteFieldDefinition, toggleFieldVisibility, getCategories, createCategory, updateCategory, deleteCategory } from '@/app/actions';
+import { getFieldDefinitions, createFieldDefinition, deleteFieldDefinition, toggleFieldVisibility, getCategories, createCategory, updateCategory, deleteCategory, setDefaultCategory } from '@/app/actions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -267,9 +267,35 @@ export default function SettingsPage() {
                                     {cat.icon || '🏷️'}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <h4 className="font-semibold text-base">{cat.name}</h4>
+                                    <div className="flex items-center gap-2">
+                                        <h4 className="font-semibold text-base">{cat.name}</h4>
+                                        {cat.is_default && (
+                                            <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium">Default</span>
+                                        )}
+                                    </div>
                                 </div>
                                 <div className="flex items-center gap-1">
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className={cn("h-8 w-8 hover:bg-transparent", cat.is_default ? "text-yellow-400 hover:text-yellow-500" : "text-muted-foreground/30 hover:text-yellow-400")}
+                                        onClick={async (e) => {
+                                            e.stopPropagation();
+                                            if (cat.is_default) return; // Already default
+                                            try {
+                                                await setDefaultCategory(cat.id);
+                                                // Optimistic update
+                                                setCategories(prev => prev.map(c => ({
+                                                    ...c,
+                                                    is_default: c.id === cat.id
+                                                })));
+                                            } catch (err) {
+                                                console.error(err);
+                                            }
+                                        }}
+                                    >
+                                        <Star className={cn("w-4 h-4", cat.is_default && "fill-current")} />
+                                    </Button>
                                     <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary">
                                         <Pencil className="w-4 h-4" />
                                     </Button>

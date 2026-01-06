@@ -39,10 +39,29 @@ export async function createCategory(data: Omit<Category, 'id' | 'created_at' | 
 
 export async function updateCategory(id: string, data: Partial<Category>) {
     const supabase = createClient();
+
+    // If setting as default, we might need to handle it, but the DB trigger (if applied) handles mutual exclusion.
+    // However, if we don't have the trigger applied yet, we should probably handle it here too for safety or just rely on the user running the migration.
+    // Let's assume the migration will be run.
+
     const { error } = await supabase
         .from('categories')
         .update(data)
         .eq('id', id);
+
+    if (error) throw error;
+    revalidatePath('/settings');
+    revalidatePath('/');
+}
+
+export async function setDefaultCategory(id: string) {
+    const supabase = createClient();
+
+    // 1. Reset all others (Manual fallback if trigger missing)
+    await supabase.from('categories').update({ is_default: false }).neq('id', id);
+
+    // 2. Set target
+    const { error } = await supabase.from('categories').update({ is_default: true }).eq('id', id);
 
     if (error) throw error;
     revalidatePath('/settings');

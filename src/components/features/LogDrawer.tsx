@@ -65,7 +65,11 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
             setDate(new Date());
             setTitle('');
             setAmount('');
-            setCategory('');
+
+            // Auto-select default category
+            const defaultCat = categoriesList.find(c => c.is_default);
+            setCategory(defaultCat?.name || '');
+
             setStartTime('');
             setEndTime('');
             setMemo('');
@@ -73,7 +77,7 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
             setCustomData({});
             setImageFile(null);
         }
-    }, [selectedLog, open]);
+    }, [selectedLog, open, categoriesList]);
 
     const commonEmojis = ['🚗', '🍳', '🛒', '🏥', '📅', '🎉', '💼', '🏠', '🏋️', '📖'];
 

@@ -7,6 +7,7 @@ export interface Category {
     icon?: string;
     sort_order: number;
     is_active: boolean;
+    is_default?: boolean;
     settings?: {
         visible_fields?: string[];
     } | null;
