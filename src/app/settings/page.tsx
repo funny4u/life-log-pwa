@@ -588,18 +588,17 @@ export default function SettingsPage() {
                                     <div>
                                         <Label className="text-sm font-medium mb-2 block">Available Fields</Label>
                                         <div className="flex flex-col gap-2 border rounded-xl p-2 bg-muted/5 w-full">
-                                            {[...STANDARD_FIELDS, ...fields.map(f => ({ ...f, id: f.key_name, icon: '📋' }))]
+                                            {[...STANDARD_FIELDS, ...fields.map(f => ({ ...f, id: f.key_name, originalId: f.id, icon: '📋' }))]
                                                 .filter(f => !visibleFields.includes(f.id))
                                                 .map(field => {
-                                                    const customFieldMatch = fields.find(f => f.key_name === field.id);
-                                                    const isCustom = !!customFieldMatch;
+                                                    const isCustom = !STANDARD_FIELDS.some(sf => sf.id === field.id);
 
                                                     return (
                                                         <div key={field.id} className="flex items-center gap-3 p-2 bg-card/50 border border-dashed rounded-lg">
                                                             <div className="flex items-center gap-3 flex-1 min-w-0 overflow-hidden opacity-70">
                                                                 <span className="text-xl flex-shrink-0">{field.icon}</span>
                                                                 <span className="text-base font-medium truncate">{field.label}</span>
-                                                                {isCustom && customFieldMatch && <span className="text-[10px] uppercase bg-muted px-1 rounded text-muted-foreground flex-shrink-0">{customFieldMatch.type}</span>}
+                                                                {isCustom && <span className="text-[10px] uppercase bg-muted px-1 rounded text-muted-foreground flex-shrink-0">{(field as any).type}</span>}
                                                             </div>
                                                             <div className="flex items-center gap-2">
                                                                 {isCustom && (
@@ -609,7 +608,7 @@ export default function SettingsPage() {
                                                                         className="h-8 w-8 text-muted-foreground hover:text-destructive"
                                                                         onClick={(e) => {
                                                                             e.stopPropagation();
-                                                                            if (customFieldMatch?.id) setDeleteConfirm({ type: 'field', id: customFieldMatch.id });
+                                                                            if ((field as any).originalId) setDeleteConfirm({ type: 'field', id: (field as any).originalId });
                                                                         }}
                                                                     >
                                                                         <Trash2 className="w-4 h-4" />

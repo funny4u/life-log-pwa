@@ -184,6 +184,17 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
                 </SheetHeader>
 
                 <div className="grid gap-4 py-0 pt-2 overflow-y-auto max-h-[calc(100%-80px)] px-1">
+                    <div className="grid gap-2">
+                        <Label htmlFor="title">Title</Label>
+                        <Input
+                            id="title"
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                            placeholder="e.g. Shopping at Costco"
+                            className="text-lg"
+                        />
+                    </div>
+
                     {/* Date Picker */}
                     <div className="grid gap-2">
                         <Label htmlFor="date">Date</Label>
@@ -209,17 +220,6 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
                                 />
                             </PopoverContent>
                         </Popover>
-                    </div>
-
-                    <div className="grid gap-2">
-                        <Label htmlFor="title">Title</Label>
-                        <Input
-                            id="title"
-                            value={title}
-                            onChange={(e) => setTitle(e.target.value)}
-                            placeholder="e.g. Shopping at Costco"
-                            className="text-lg"
-                        />
                     </div>
 
                     <div className="grid gap-2">
