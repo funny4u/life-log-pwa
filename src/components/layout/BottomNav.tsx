@@ -12,36 +12,36 @@ export function BottomNav() {
 
     return (
         <div className="fixed bottom-0 w-full bg-background/80 backdrop-blur-md border-t z-50 pb-safe">
-            <div className="flex justify-around items-center h-16 px-6">
+            <div className="flex justify-around items-center h-20 px-6">
 
                 {/* Menu (Hamburger) */}
                 <Button
                     variant="ghost"
                     size="icon"
-                    className="h-12 w-12 hover:bg-transparent text-muted-foreground hover:text-primary"
+                    className="h-16 w-16 hover:bg-transparent text-muted-foreground hover:text-primary"
                     onClick={openSidebar}
                 >
-                    <Menu className="w-7 h-7" />
+                    <Menu className="w-10 h-10" />
                 </Button>
 
                 {/* Add Button (Center) */}
                 <Button
                     variant="ghost"
                     size="icon"
-                    className="h-14 w-14 hover:bg-transparent text-primary hover:text-primary scale-110"
+                    className="h-20 w-20 hover:bg-transparent text-primary hover:text-primary scale-110"
                     onClick={() => openDrawer()}
                 >
-                    <Plus className="w-10 h-10" />
+                    <Plus className="w-14 h-14" />
                 </Button>
 
                 {/* Search */}
                 <Button
                     variant="ghost"
                     size="icon"
-                    className="h-12 w-12 hover:bg-transparent text-muted-foreground hover:text-primary"
+                    className="h-16 w-16 hover:bg-transparent text-muted-foreground hover:text-primary"
                     onClick={openSearch}
                 >
-                    <Search className="w-7 h-7" />
+                    <Search className="w-10 h-10" />
                 </Button>
 
             </div>
