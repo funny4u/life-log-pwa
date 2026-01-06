@@ -538,58 +538,44 @@ export default function SettingsPage() {
                                     <div>
                                         <Label className="text-sm font-medium mb-2 block">Active Fields (Ordered)</Label>
                                         <div className="flex flex-col gap-2 border rounded-xl p-2 bg-muted/5 w-full">
-                                            {visibleFields.map((fieldId, index) => {
-                                                const standardField = STANDARD_FIELDS.find(f => f.id === fieldId);
-                                                const customField = fields.find(f => f.key_name === fieldId);
-                                                const field = standardField || customField;
+                                            <DndContext
+                                                sensors={sensors}
+                                                collisionDetection={closestCenter}
+                                                onDragEnd={handleDragEnd}
+                                                // Mobile drag fix
+                                                modifiers={[]}
+                                            >
+                                                <SortableContext
+                                                    items={visibleFields}
+                                                    strategy={verticalListSortingStrategy}
+                                                >
+                                                    {visibleFields.map((fieldId) => {
+                                                        const standardField = STANDARD_FIELDS.find(f => f.id === fieldId);
+                                                        const customField = fields.find(f => f.key_name === fieldId);
+                                                        const field = standardField || customField;
 
-                                                if (!field) return null;
+                                                        if (!field) return null;
 
-                                                const isCustom = !!customField;
-                                                const label = standardField ? standardField.label : customField?.label;
-                                                const icon = standardField ? standardField.icon : '📋';
+                                                        const isCustom = !!customField;
+                                                        const fieldProp = {
+                                                            label: standardField ? standardField.label : customField?.label,
+                                                            icon: standardField ? standardField.icon : '📋',
+                                                            type: isCustom && customField ? customField.type : undefined
+                                                        };
 
-                                                return (
-                                                    <div key={fieldId} className="flex items-center gap-2 p-2 bg-card border rounded-lg shadow-sm">
-                                                        <div className="flex flex-col gap-0.5">
-                                                            <Button
-                                                                variant="ghost" size="icon" className="h-6 w-6"
-                                                                disabled={index === 0}
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    const newFields = [...visibleFields];
-                                                                    [newFields[index - 1], newFields[index]] = [newFields[index], newFields[index - 1]];
-                                                                    setVisibleFields(newFields);
-                                                                }}
-                                                            >
-                                                                <ChevronsUpDown className="w-3 h-3 rotate-180" />
-                                                            </Button>
-                                                            <Button
-                                                                variant="ghost" size="icon" className="h-6 w-6"
-                                                                disabled={index === visibleFields.length - 1}
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    const newFields = [...visibleFields];
-                                                                    [newFields[index + 1], newFields[index]] = [newFields[index], newFields[index + 1]];
-                                                                    setVisibleFields(newFields);
-                                                                }}
-                                                            >
-                                                                <ChevronsUpDown className="w-3 h-3" />
-                                                            </Button>
-                                                        </div>
-                                                        <div className="flex items-center gap-3 flex-1 min-w-0 overflow-hidden">
-                                                            <span className="text-xl flex-shrink-0">{icon}</span>
-                                                            <span className="text-base font-medium truncate">{label}</span>
-                                                            {isCustom && customField && <span className="text-[10px] uppercase bg-muted px-1 rounded text-muted-foreground flex-shrink-0">{customField.type}</span>}
-                                                        </div>
-                                                        <Switch
-                                                            checked={true}
-                                                            onCheckedChange={() => toggleVisible(fieldId)}
-                                                            className="flex-shrink-0 ml-auto"
-                                                        />
-                                                    </div>
-                                                );
-                                            })}
+                                                        return (
+                                                            <SortableFieldRow
+                                                                key={fieldId}
+                                                                id={fieldId}
+                                                                field={fieldProp}
+                                                                isCustom={isCustom}
+                                                                toggleVisible={toggleVisible}
+                                                            />
+                                                        );
+                                                    })}
+                                                </SortableContext>
+                                            </DndContext>
+
                                             {visibleFields.length === 0 && (
                                                 <div className="text-center py-4 text-sm text-muted-foreground">
                                                     No active fields. Add from below.
