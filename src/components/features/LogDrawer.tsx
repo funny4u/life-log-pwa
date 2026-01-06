@@ -184,7 +184,6 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
                 </SheetHeader>
 
                 <div className="grid gap-4 py-0 pt-2 overflow-y-auto max-h-[calc(100%-80px)] px-1">
-                    {/* Emoji Selection removed based on user feedback to simplify UI */}
                     {/* Date Picker */}
                     <div className="grid gap-2">
                         <Label htmlFor="date">Date</Label>
@@ -211,34 +210,6 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
                             </PopoverContent>
                         </Popover>
                     </div>
-
-                    {/* Time Pickers */}
-                    {(isFieldVisible('start_time') || isFieldVisible('end_time')) && (
-                        <div className="grid grid-cols-2 gap-4">
-                            {isFieldVisible('start_time') && (
-                                <div className="grid gap-2">
-                                    <Label htmlFor="start-time">Start Time</Label>
-                                    <Input
-                                        id="start-time"
-                                        type="time"
-                                        value={startTime}
-                                        onChange={(e) => setStartTime(e.target.value)}
-                                    />
-                                </div>
-                            )}
-                            {isFieldVisible('end_time') && (
-                                <div className="grid gap-2">
-                                    <Label htmlFor="end-time">End Time</Label>
-                                    <Input
-                                        id="end-time"
-                                        type="time"
-                                        value={endTime}
-                                        onChange={(e) => setEndTime(e.target.value)}
-                                    />
-                                </div>
-                            )}
-                        </div>
-                    )}
 
                     <div className="grid gap-2">
                         <Label htmlFor="title">Title</Label>
@@ -274,75 +245,126 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
                         </Select>
                     </div>
 
-                    {isFieldVisible('amount') && (
-                        <div className="grid gap-2">
-                            <Label htmlFor="amount">Amount ($)</Label>
-                            <Input
-                                id="amount"
-                                type="number"
-                                value={amount}
-                                onChange={(e) => setAmount(e.target.value)}
-                                placeholder="0.00"
-                                inputMode="decimal"
-                            />
-                        </div>
-                    )}
+                    {/* Dynamic Fields (Ordered) */}
+                    {(() => {
+                        const currentCat = categoriesList.find(c => c.name === category);
+                        const orderedIds = currentCat?.settings?.visible_fields || [];
 
-                    {isFieldVisible('memo') && (
-                        <div className="grid gap-2">
-                            <Label htmlFor="memo">Memo</Label>
-                            <textarea
-                                id="memo"
-                                className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                placeholder="Additional details..."
-                                value={memo}
-                                onChange={(e) => setMemo(e.target.value)}
-                            />
-                        </div>
-                    )}
+                        return orderedIds.map(fieldId => {
+                            // Standard Fields
+                            if (fieldId === 'start_time') {
+                                return (
+                                    <div key="start_time" className="grid gap-2">
+                                        <Label htmlFor="start-time">Start Time</Label>
+                                        <Input
+                                            id="start-time"
+                                            type="time"
+                                            value={startTime}
+                                            onChange={(e) => setStartTime(e.target.value)}
+                                        />
+                                    </div>
+                                );
+                            }
+                            if (fieldId === 'end_time') {
+                                return (
+                                    <div key="end_time" className="grid gap-2">
+                                        <Label htmlFor="end-time">End Time</Label>
+                                        <Input
+                                            id="end-time"
+                                            type="time"
+                                            value={endTime}
+                                            onChange={(e) => setEndTime(e.target.value)}
+                                        />
+                                    </div>
+                                );
+                            }
+                            if (fieldId === 'amount') {
+                                return (
+                                    <div key="amount" className="grid gap-2">
+                                        <Label htmlFor="amount">Amount ($)</Label>
+                                        <Input
+                                            id="amount"
+                                            type="number"
+                                            value={amount}
+                                            onChange={(e) => setAmount(e.target.value)}
+                                            placeholder="0.00"
+                                            inputMode="decimal"
+                                        />
+                                    </div>
+                                );
+                            }
+                            if (fieldId === 'memo') {
+                                return (
+                                    <div key="memo" className="grid gap-2">
+                                        <Label htmlFor="memo">Memo</Label>
+                                        <textarea
+                                            id="memo"
+                                            className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                            placeholder="Additional details..."
+                                            value={memo}
+                                            onChange={(e) => setMemo(e.target.value)}
+                                        />
+                                    </div>
+                                );
+                            }
+                            if (fieldId === 'image_url') {
+                                return (
+                                    <div key="image_url" className="grid gap-2">
+                                        <Label htmlFor="image">Image</Label>
+                                        <Input
+                                            id="image"
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+                                        />
+                                    </div>
+                                );
+                            }
 
-                    {/* Dynamic Fields */}
-                    {customFields.filter(f => f.is_active && isFieldVisible(f.key_name)).map(field => (
-                        <div key={field.id} className="grid gap-2">
-                            <Label htmlFor={field.key_name}>{field.label}</Label>
-                            {field.type === 'text' && (
-                                <Input
-                                    id={field.key_name}
-                                    value={customData[field.key_name] || ''}
-                                    onChange={e => setCustomData({ ...customData, [field.key_name]: e.target.value })}
-                                />
-                            )}
-                            {field.type === 'number' && (
-                                <Input
-                                    id={field.key_name}
-                                    type="number"
-                                    value={customData[field.key_name] || ''}
-                                    onChange={e => setCustomData({ ...customData, [field.key_name]: e.target.value })}
-                                />
-                            )}
-                            {field.type === 'time' && (
-                                <Input
-                                    id={field.key_name}
-                                    type="time"
-                                    value={customData[field.key_name] || ''}
-                                    onChange={e => setCustomData({ ...customData, [field.key_name]: e.target.value })}
-                                />
-                            )}
-                            {/* Add more types later */}
-                        </div>
-                    ))}
-
-                    {isFieldVisible('image_url') && (
-                        <div className="grid gap-2">
-                            <Label htmlFor="image">Image</Label>
-                            <Input
-                                id="image"
-                                type="file"
-                                accept="image/*"
-                                onChange={(e) => setImageFile(e.target.files?.[0] || null)}
-                            />
-                        </div>
-                    )}
+                            // Custom Fields
+                            const field = customFields.find(f => f.key_name === fieldId);
+                            if (field && field.is_active) {
+                                return (
+                                    <div key={field.id} className="grid gap-2">
+                                        <Label htmlFor={field.key_name}>{field.label}</Label>
+                                        {field.type === 'text' && (
+                                            <Input
+                                                id={field.key_name}
+                                                value={customData[field.key_name] || ''}
+                                                onChange={e => setCustomData({ ...customData, [field.key_name]: e.target.value })}
+                                            />
+                                        )}
+                                        {field.type === 'number' && (
+                                            <Input
+                                                id={field.key_name}
+                                                type="number"
+                                                value={customData[field.key_name] || ''}
+                                                onChange={e => setCustomData({ ...customData, [field.key_name]: e.target.value })}
+                                            />
+                                        )}
+                                        {field.type === 'time' && (
+                                            <Input
+                                                id={field.key_name}
+                                                type="time"
+                                                value={customData[field.key_name] || ''}
+                                                onChange={e => setCustomData({ ...customData, [field.key_name]: e.target.value })}
+                                            />
+                                        )}
+                                        {/* Fallback for other types */}
+                                        {['url', 'email', 'phone'].includes(field.type) && (
+                                            <Input
+                                                id={field.key_name}
+                                                type={field.type === 'phone' ? 'tel' : field.type}
+                                                value={customData[field.key_name] || ''}
+                                                onChange={e => setCustomData({ ...customData, [field.key_name]: e.target.value })}
+                                            />
+                                        )}
+                                    </div>
+                                );
+                            }
+                            return null;
+                        });
+                    })()}
                 </div>
 
                 <SheetFooter className="absolute bottom-4 left-4 right-4 pb-safe flex gap-3">
