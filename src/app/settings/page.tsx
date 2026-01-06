@@ -467,43 +467,113 @@ export default function SettingsPage() {
                                 </div>
                                 <p className="text-xs text-muted-foreground">Select which fields are visible for this category.</p>
 
-                                <div className="flex flex-col gap-2 border rounded-xl p-4 bg-muted/5 w-full">
-                                    {/* Standard Fields */}
-                                    {STANDARD_FIELDS.map(field => (
-                                        <div
-                                            key={field.id}
-                                            className="flex items-center gap-3 py-3 border-b last:border-0 cursor-pointer active:bg-muted/10 transition-colors w-full"
-                                            onClick={() => toggleVisible(field.id)}
-                                        >
-                                            <div className="flex items-center gap-3 flex-1 min-w-0 overflow-hidden">
-                                                <span className="text-xl flex-shrink-0">{field.icon}</span>
-                                                <span className="text-base font-medium truncate">{field.label}</span>
-                                            </div>
-                                            <Switch
-                                                checked={visibleFields.includes(field.id)}
-                                                className="pointer-events-none flex-shrink-0 ml-auto"
-                                            />
-                                        </div>
-                                    ))}
+                                <div className="space-y-4">
+                                    {/* Active Fields (Ordered) */}
+                                    <div>
+                                        <Label className="text-sm font-medium mb-2 block">Active Fields (Ordered)</Label>
+                                        <div className="flex flex-col gap-2 border rounded-xl p-2 bg-muted/5 w-full">
+                                            {visibleFields.map((fieldId, index) => {
+                                                const standardField = STANDARD_FIELDS.find(f => f.id === fieldId);
+                                                const customField = fields.find(f => f.key_name === fieldId);
+                                                const field = standardField || customField;
 
-                                    {/* Custom Fields */}
-                                    {fields.map(field => (
-                                        <div
-                                            key={field.id}
-                                            className="flex items-center gap-3 py-3 border-b last:border-0 cursor-pointer active:bg-muted/10 transition-colors w-full"
-                                            onClick={() => toggleVisible(field.key_name)}
-                                        >
-                                            <div className="flex items-center gap-3 flex-1 min-w-0 overflow-hidden">
-                                                <span className="text-xl flex-shrink-0">📋</span>
-                                                <span className="text-base font-medium truncate">{field.label}</span>
-                                                <span className="text-[10px] uppercase bg-muted px-1 rounded text-muted-foreground flex-shrink-0">{field.type}</span>
-                                            </div>
-                                            <Switch
-                                                checked={visibleFields.includes(field.key_name)}
-                                                className="pointer-events-none flex-shrink-0 ml-auto"
-                                            />
+                                                if (!field) return null;
+
+                                                const isCustom = !!customField;
+                                                const label = standardField ? standardField.label : customField?.label;
+                                                const icon = standardField ? standardField.icon : '📋';
+
+                                                return (
+                                                    <div key={fieldId} className="flex items-center gap-2 p-2 bg-card border rounded-lg shadow-sm">
+                                                        <div className="flex flex-col gap-0.5">
+                                                            <Button
+                                                                variant="ghost" size="icon" className="h-6 w-6"
+                                                                disabled={index === 0}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    const newFields = [...visibleFields];
+                                                                    [newFields[index - 1], newFields[index]] = [newFields[index], newFields[index - 1]];
+                                                                    setVisibleFields(newFields);
+                                                                }}
+                                                            >
+                                                                <ChevronsUpDown className="w-3 h-3 rotate-180" />
+                                                            </Button>
+                                                            <Button
+                                                                variant="ghost" size="icon" className="h-6 w-6"
+                                                                disabled={index === visibleFields.length - 1}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    const newFields = [...visibleFields];
+                                                                    [newFields[index + 1], newFields[index]] = [newFields[index], newFields[index + 1]];
+                                                                    setVisibleFields(newFields);
+                                                                }}
+                                                            >
+                                                                <ChevronsUpDown className="w-3 h-3" />
+                                                            </Button>
+                                                        </div>
+                                                        <div className="flex items-center gap-3 flex-1 min-w-0 overflow-hidden">
+                                                            <span className="text-xl flex-shrink-0">{icon}</span>
+                                                            <span className="text-base font-medium truncate">{label}</span>
+                                                            {isCustom && customField && <span className="text-[10px] uppercase bg-muted px-1 rounded text-muted-foreground flex-shrink-0">{customField.type}</span>}
+                                                        </div>
+                                                        <Switch
+                                                            checked={true}
+                                                            onCheckedChange={() => toggleVisible(fieldId)}
+                                                            className="flex-shrink-0 ml-auto"
+                                                        />
+                                                    </div>
+                                                );
+                                            })}
+                                            {visibleFields.length === 0 && (
+                                                <div className="text-center py-4 text-sm text-muted-foreground">
+                                                    No active fields. Add from below.
+                                                </div>
+                                            )}
                                         </div>
-                                    ))}
+                                    </div>
+
+                                    {/* Inactive Fields */}
+                                    <div>
+                                        <Label className="text-sm font-medium mb-2 block">Available Fields</Label>
+                                        <div className="flex flex-col gap-2 border rounded-xl p-2 bg-muted/5 w-full">
+                                            {[...STANDARD_FIELDS, ...fields.map(f => ({ ...f, id: f.key_name, icon: '📋' }))]
+                                                .filter(f => !visibleFields.includes(f.id))
+                                                .map(field => {
+                                                    const isCustom = !STANDARD_FIELDS.some(sf => sf.id === field.id);
+                                                    return (
+                                                        <div key={field.id} className="flex items-center gap-3 p-2 bg-card/50 border border-dashed rounded-lg">
+                                                            <div className="flex items-center gap-3 flex-1 min-w-0 overflow-hidden opacity-70">
+                                                                <span className="text-xl flex-shrink-0">{field.icon}</span>
+                                                                <span className="text-base font-medium truncate">{field.label}</span>
+                                                                {isCustom && <span className="text-[10px] uppercase bg-muted px-1 rounded text-muted-foreground flex-shrink-0">{(field as any).type}</span>}
+                                                            </div>
+                                                            <div className="flex items-center gap-2">
+                                                                {isCustom && (
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="icon"
+                                                                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            // Use original ID for deletion not the key_name aliased as id above
+                                                                            const originalId = fields.find(f => f.key_name === field.id)?.id;
+                                                                            if (originalId) setDeleteConfirm({ type: 'field', id: originalId });
+                                                                        }}
+                                                                    >
+                                                                        <Trash2 className="w-4 h-4" />
+                                                                    </Button>
+                                                                )}
+                                                                <Switch
+                                                                    checked={false}
+                                                                    onCheckedChange={() => toggleVisible(field.id)}
+                                                                    className="flex-shrink-0"
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
