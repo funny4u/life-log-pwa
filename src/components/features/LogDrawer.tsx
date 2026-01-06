@@ -181,21 +181,7 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
                 </SheetHeader>
 
                 <div className="grid gap-4 py-4 overflow-y-auto max-h-[calc(100%-80px)] px-1">
-                    {/* Emoji Selection */}
-                    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                        {commonEmojis.map((e) => (
-                            <button
-                                key={e}
-                                onClick={() => setEmoji(e)}
-                                className={cn(
-                                    "text-2xl w-10 h-10 flex items-center justify-center rounded-full transition-all flex-shrink-0",
-                                    emoji === e ? "bg-primary/20 scale-110" : "bg-muted/50 hover:bg-muted"
-                                )}
-                            >
-                                {e}
-                            </button>
-                        ))}
-                    </div>
+                    {/* Emoji Selection removed based on user feedback to simplify UI */}
                     {/* Date Picker */}
                     <div className="grid gap-2">
                         <Label htmlFor="date">Date</Label>

@@ -21,17 +21,17 @@ export function BottomNav() {
                     className="h-12 w-12 hover:bg-transparent text-muted-foreground hover:text-primary"
                     onClick={openSidebar}
                 >
-                    <Menu className="w-6 h-6" />
+                    <Menu className="w-7 h-7" />
                 </Button>
 
                 {/* Add Button (Center) */}
                 <Button
                     variant="ghost"
                     size="icon"
-                    className="h-12 w-12 hover:bg-transparent text-muted-foreground hover:text-primary"
+                    className="h-14 w-14 hover:bg-transparent text-primary hover:text-primary scale-110"
                     onClick={() => openDrawer()}
                 >
-                    <Plus className="w-8 h-8" />
+                    <Plus className="w-10 h-10" />
                 </Button>
 
                 {/* Search */}
@@ -41,7 +41,7 @@ export function BottomNav() {
                     className="h-12 w-12 hover:bg-transparent text-muted-foreground hover:text-primary"
                     onClick={openSearch}
                 >
-                    <Search className="w-6 h-6" />
+                    <Search className="w-7 h-7" />
                 </Button>
 
             </div>
