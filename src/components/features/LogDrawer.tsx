@@ -175,12 +175,11 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
             <SheetContent side="bottom" className="h-[90vh] sm:max-w-md rounded-t-[10px] pb-safe">
-                <SheetHeader className="mb-4">
+                <SheetHeader className="mb-2 text-left">
                     <SheetTitle>{selectedLog ? 'Edit Log' : 'New Log'}</SheetTitle>
-                    <SheetDescription>{selectedLog ? 'Update log details.' : 'Record your activity or expense.'}</SheetDescription>
                 </SheetHeader>
 
-                <div className="grid gap-4 py-4 overflow-y-auto max-h-[calc(100%-80px)] px-1">
+                <div className="grid gap-4 py-0 pt-2 overflow-y-auto max-h-[calc(100%-80px)] px-1">
                     {/* Emoji Selection removed based on user feedback to simplify UI */}
                     {/* Date Picker */}
                     <div className="grid gap-2">
