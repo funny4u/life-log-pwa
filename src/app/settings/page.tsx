@@ -319,8 +319,8 @@ export default function SettingsPage() {
                         <Button size="sm" onClick={() => {
                             setSheetMode('create_category');
                             setIsSheetOpen(true);
-                            // Default all standard fields enabled for new category
-                            setVisibleFields(STANDARD_FIELDS.map(f => f.id));
+                            // Default to common system fields (Amount, Memo, Image) excluding Time
+                            setVisibleFields(['amount', 'memo', 'image_url']);
                         }}>
                             <Plus className="w-4 h-4 mr-1" /> Add
                         </Button>
@@ -598,7 +598,11 @@ export default function SettingsPage() {
                                                             <div className="flex items-center gap-3 flex-1 min-w-0 overflow-hidden opacity-70">
                                                                 <span className="text-xl flex-shrink-0">{field.icon}</span>
                                                                 <span className="text-base font-medium truncate">{field.label}</span>
-                                                                {isCustom && <span className="text-[10px] uppercase bg-muted px-1 rounded text-muted-foreground flex-shrink-0">{(field as any).type}</span>}
+                                                                {isCustom ? (
+                                                                    <span className="text-[10px] uppercase bg-muted px-1 rounded text-muted-foreground flex-shrink-0">{(field as any).type}</span>
+                                                                ) : (
+                                                                    <span className="text-[10px] uppercase bg-primary/5 px-1 rounded text-primary/70 flex-shrink-0 border border-primary/10 font-semibold tracking-wider">SYSTEM</span>
+                                                                )}
                                                             </div>
                                                             <div className="flex items-center gap-2">
                                                                 {isCustom && (
