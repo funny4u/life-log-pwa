@@ -591,7 +591,7 @@ export default function SettingsPage() {
                                             {[...STANDARD_FIELDS, ...fields.map(f => ({ ...f, id: f.key_name, originalId: f.id, icon: '📋' }))]
                                                 .filter(f => !visibleFields.includes(f.id))
                                                 .map(field => {
-                                                    const isCustom = !STANDARD_FIELDS.some(sf => sf.id === field.id);
+                                                    const isCustom = !!(field as any).originalId;
 
                                                     return (
                                                         <div key={field.id} className="flex items-center gap-3 p-2 bg-card/50 border border-dashed rounded-lg">
