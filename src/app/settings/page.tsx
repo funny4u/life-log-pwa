@@ -591,13 +591,15 @@ export default function SettingsPage() {
                                             {[...STANDARD_FIELDS, ...fields.map(f => ({ ...f, id: f.key_name, icon: '📋' }))]
                                                 .filter(f => !visibleFields.includes(f.id))
                                                 .map(field => {
-                                                    const isCustom = !STANDARD_FIELDS.some(sf => sf.id === field.id);
+                                                    const customFieldMatch = fields.find(f => f.key_name === field.id);
+                                                    const isCustom = !!customFieldMatch;
+
                                                     return (
                                                         <div key={field.id} className="flex items-center gap-3 p-2 bg-card/50 border border-dashed rounded-lg">
                                                             <div className="flex items-center gap-3 flex-1 min-w-0 overflow-hidden opacity-70">
                                                                 <span className="text-xl flex-shrink-0">{field.icon}</span>
                                                                 <span className="text-base font-medium truncate">{field.label}</span>
-                                                                {isCustom && <span className="text-[10px] uppercase bg-muted px-1 rounded text-muted-foreground flex-shrink-0">{(field as any).type}</span>}
+                                                                {isCustom && customFieldMatch && <span className="text-[10px] uppercase bg-muted px-1 rounded text-muted-foreground flex-shrink-0">{customFieldMatch.type}</span>}
                                                             </div>
                                                             <div className="flex items-center gap-2">
                                                                 {isCustom && (
@@ -607,9 +609,7 @@ export default function SettingsPage() {
                                                                         className="h-8 w-8 text-muted-foreground hover:text-destructive"
                                                                         onClick={(e) => {
                                                                             e.stopPropagation();
-                                                                            // Use original ID for deletion not the key_name aliased as id above
-                                                                            const originalId = fields.find(f => f.key_name === field.id)?.id;
-                                                                            if (originalId) setDeleteConfirm({ type: 'field', id: originalId });
+                                                                            if (customFieldMatch?.id) setDeleteConfirm({ type: 'field', id: customFieldMatch.id });
                                                                         }}
                                                                     >
                                                                         <Trash2 className="w-4 h-4" />
