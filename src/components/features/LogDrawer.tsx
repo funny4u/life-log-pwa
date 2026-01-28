@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
+import { Switch } from '@/components/ui/switch';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -376,6 +377,16 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
                                                 value={customData[field.key_name] || ''}
                                                 onChange={e => setCustomData({ ...customData, [field.key_name]: e.target.value })}
                                             />
+                                        )}
+                                        {field.type === 'boolean' && (
+                                            <div className="flex items-center justify-between py-2 border rounded-md px-3 bg-muted/5">
+                                                <Label htmlFor={field.key_name} className="flex-1 font-medium">{field.label}</Label>
+                                                <Switch
+                                                    id={field.key_name}
+                                                    checked={!!customData[field.key_name]}
+                                                    onCheckedChange={(checked) => setCustomData({ ...customData, [field.key_name]: checked })}
+                                                />
+                                            </div>
                                         )}
                                         {/* Fallback for other types */}
                                         {['url', 'email', 'phone'].includes(field.type) && (
