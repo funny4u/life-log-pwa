@@ -158,19 +158,10 @@ export async function getLogs() {
 
 export async function createLog(log: Omit<Log, 'id' | 'created_at'>) {
     const supabase = createClient();
-    let { error } = await supabase.from('logs').insert(log);
 
-    // Graceful Handling: Retry if emoji column missing
-    if (error && (
-        error.code === 'PGRST204' ||
-        error.message?.includes("emoji") ||
-        JSON.stringify(error).includes("emoji")
-    )) {
-        console.warn('⚠️ Schema Mismatch detected. Retrying without emoji...', error);
-        const { emoji, ...logWithoutEmoji } = log;
-        const retry = await supabase.from('logs').insert(logWithoutEmoji);
-        error = retry.error;
-    }
+    // TEMPORARY FIX: Remove emoji to bypass schema error
+    const { emoji, ...safeLog } = log;
+    const { error } = await supabase.from('logs').insert(safeLog);
 
     if (error) {
         console.error('Error creating log:', error);
@@ -186,18 +177,12 @@ export async function createLog(log: Omit<Log, 'id' | 'created_at'>) {
 export async function updateLog(id: string, data: Partial<Omit<Log, 'id' | 'created_at'>>) {
     const supabase = await createClient();
 
-    let { error } = await supabase
+    // TEMPORARY FIX: Remove emoji to bypass schema error
+    const { emoji, ...safeData } = data;
+    const { error } = await supabase
         .from('logs')
-        .update(data)
+        .update(safeData)
         .eq('id', id);
-
-    // Graceful Handling
-    if (error && error.message.includes("Could not find the 'emoji' column")) {
-        console.warn('Emoji column missing in DB. Retrying update without emoji.');
-        const { emoji, ...dataWithoutEmoji } = data;
-        const retry = await supabase.from('logs').update(dataWithoutEmoji).eq('id', id);
-        error = retry.error;
-    }
 
     if (error) {
         console.error('Error updating log:', error);
