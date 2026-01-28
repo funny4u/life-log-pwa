@@ -160,9 +160,13 @@ export async function createLog(log: Omit<Log, 'id' | 'created_at'>) {
     const supabase = createClient();
     let { error } = await supabase.from('logs').insert(log);
 
-    // Graceful Handling: If emoji column missing, retry without it
-    if (error && error.message.includes("Could not find the 'emoji' column")) {
-        console.warn('Emoji column missing in DB. Retrying without emoji.');
+    // Graceful Handling: Retry if emoji column missing
+    if (error && (
+        error.code === 'PGRST204' ||
+        error.message?.includes("emoji") ||
+        JSON.stringify(error).includes("emoji")
+    )) {
+        console.warn('⚠️ Schema Mismatch detected. Retrying without emoji...', error);
         const { emoji, ...logWithoutEmoji } = log;
         const retry = await supabase.from('logs').insert(logWithoutEmoji);
         error = retry.error;
