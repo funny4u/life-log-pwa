@@ -158,6 +158,33 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
                 });
             }
 
+            // Instagram / Share Logic
+            const instaField = customFields.find(f => f.label.toLowerCase() === 'instagram' && f.type === 'boolean');
+            const shouldShare = instaField && customData[instaField.key_name];
+
+            if (shouldShare && typeof navigator !== 'undefined' && navigator.share) {
+                try {
+                    const shareData: ShareData = {
+                        title: title,
+                        text: `${title}\n${memo ? '\n' + memo : ''}\n\nVia LifeLog`,
+                    };
+
+                    if (imageFile) {
+                        try {
+                            if (navigator.canShare && navigator.canShare({ files: [imageFile] })) {
+                                shareData.files = [imageFile];
+                            }
+                        } catch (e) {
+                            console.warn('File sharing check failed', e);
+                        }
+                    }
+
+                    await navigator.share(shareData);
+                } catch (shareError) {
+                    console.log('Share cancelled or failed', shareError);
+                }
+            }
+
             // Reset form
             setTitle('');
             setAmount('');

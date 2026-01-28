@@ -17,6 +17,11 @@ export const metadata: Metadata = {
   title: "Life Log PWA",
   description: "Mobile-first Personal Life Log",
   manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "LifeLog",
+  },
 };
 
 export const viewport: Viewport = {
