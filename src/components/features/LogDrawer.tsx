@@ -102,7 +102,11 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
     };
 
     const handleSave = async () => {
-        if (!date || !title || !category) return;
+        console.log('handleSave called', { date, title, category });
+        if (!date || !title || !category) {
+            alert('Please enter a Title and select a Category.');
+            return;
+        }
 
         try {
             let imageUrl: string | null = null;

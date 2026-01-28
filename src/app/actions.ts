@@ -158,11 +158,19 @@ export async function getLogs() {
 
 export async function createLog(log: Omit<Log, 'id' | 'created_at'>) {
     const supabase = createClient();
-    const { error } = await supabase.from('logs').insert(log);
+    let { error } = await supabase.from('logs').insert(log);
+
+    // Graceful Handling: If emoji column missing, retry without it
+    if (error && error.message.includes("Could not find the 'emoji' column")) {
+        console.warn('Emoji column missing in DB. Retrying without emoji.');
+        const { emoji, ...logWithoutEmoji } = log;
+        const retry = await supabase.from('logs').insert(logWithoutEmoji);
+        error = retry.error;
+    }
 
     if (error) {
         console.error('Error creating log:', error);
-        throw new Error('Failed to create log');
+        throw new Error(error.message);
     }
 
     revalidatePath('/');
@@ -174,14 +182,22 @@ export async function createLog(log: Omit<Log, 'id' | 'created_at'>) {
 export async function updateLog(id: string, data: Partial<Omit<Log, 'id' | 'created_at'>>) {
     const supabase = await createClient();
 
-    const { error } = await supabase
+    let { error } = await supabase
         .from('logs')
         .update(data)
         .eq('id', id);
 
+    // Graceful Handling
+    if (error && error.message.includes("Could not find the 'emoji' column")) {
+        console.warn('Emoji column missing in DB. Retrying update without emoji.');
+        const { emoji, ...dataWithoutEmoji } = data;
+        const retry = await supabase.from('logs').update(dataWithoutEmoji).eq('id', id);
+        error = retry.error;
+    }
+
     if (error) {
         console.error('Error updating log:', error);
-        throw new Error('Failed to update log');
+        throw new Error(error.message);
     }
 
     revalidatePath('/');
