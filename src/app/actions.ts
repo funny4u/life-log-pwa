@@ -142,10 +142,9 @@ export async function reorderFields(items: { id: string; sort_order: number }[])
 
 export async function getLogs() {
     const supabase = createClient();
-    // Explicitly select columns to avoid schema cache issues with 'emoji'
     const { data, error } = await supabase
         .from('logs')
-        .select('id, created_at, date, title, category, amount, image_url, memo, status, start_time, end_time, custom_data')
+        .select('*')
         .order('date', { ascending: false })
         .order('created_at', { ascending: false });
 
