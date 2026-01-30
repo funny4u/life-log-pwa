@@ -7,18 +7,21 @@ import { useLayoutContext } from '@/components/providers/LayoutProvider';
 import { useLogContext } from '@/components/providers/LogProvider';
 import { cn } from '@/lib/utils';
 
+import { useLanguage } from '@/components/providers/LanguageProvider';
+
 export function BottomNav() {
     const { } = useLayoutContext();
     const { openDrawer } = useLogContext();
+    const { t } = useLanguage();
     const pathname = usePathname();
     const router = useRouter();
 
     const navItems = [
-        { label: 'Calendar', icon: Calendar, href: '/calendar', action: () => router.push('/calendar') },
-        { label: 'Stats', icon: PieChart, href: '/stats', action: () => router.push('/stats') },
-        { label: 'Add', icon: Plus, isAction: true, action: () => openDrawer() },
-        { label: 'Search', icon: Search, href: '/search', action: () => router.push('/search') },
-        { label: 'Settings', icon: Settings, href: '/settings', action: () => router.push('/settings') },
+        { label: t('nav.calendar'), icon: Calendar, href: '/calendar', action: () => router.push('/calendar') },
+        { label: t('nav.stats'), icon: PieChart, href: '/stats', action: () => router.push('/stats') },
+        { label: t('nav.add'), icon: Plus, isAction: true, action: () => openDrawer() },
+        { label: t('nav.search'), icon: Search, href: '/search', action: () => router.push('/search') },
+        { label: t('nav.settings'), icon: Settings, href: '/settings', action: () => router.push('/settings') },
     ];
 
     return (
@@ -34,6 +37,7 @@ export function BottomNav() {
                                 key="add-btn"
                                 onClick={item.action}
                                 className="flex flex-col items-center justify-center -mt-6 bg-primary text-primary-foreground h-12 w-12 rounded-full shadow-lg active:scale-95 transition-transform"
+                                aria-label={item.label}
                             >
                                 <Plus className="w-7 h-7" />
                             </button>

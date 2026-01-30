@@ -16,6 +16,7 @@ import { createLog, updateLog, deleteLog, getFieldDefinitions, getCategories } f
 import { LogCategory, FieldDefinition, Category } from '@/lib/types';
 import { createClient } from '@/lib/supabase';
 import { useLogContext } from '@/components/providers/LogProvider';
+import { useLanguage } from '@/components/providers/LanguageProvider';
 
 interface LogDrawerProps {
     open: boolean;
@@ -23,6 +24,7 @@ interface LogDrawerProps {
 }
 
 export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
+    const { t } = useLanguage();
     const { selectedLog, closeDrawer } = useLogContext();
 
     const [date, setDate] = useState<Date | undefined>(new Date());
@@ -82,7 +84,7 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
 
     const handleDelete = async () => {
         if (!selectedLog) return;
-        if (!confirm('Are you sure you want to delete this log?')) return;
+        if (!confirm(t('actions.confirmDelete'))) return;
 
         try {
             await deleteLog(selectedLog.id);
@@ -95,7 +97,7 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
     const handleSave = async () => {
         console.log('handleSave called', { date, title, category });
         if (!date || !title || !category) {
-            alert('Please enter a Title and select a Category.');
+            alert(t('actions.fillRequired'));
             return;
         }
 
@@ -202,24 +204,24 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
         <Sheet open={open} onOpenChange={onOpenChange}>
             <SheetContent side="bottom" className="h-[90vh] sm:max-w-md rounded-t-[10px] pb-safe">
                 <SheetHeader className="mb-2 text-left">
-                    <SheetTitle>{selectedLog ? 'Edit Log' : 'New Log'}</SheetTitle>
+                    <SheetTitle>{selectedLog ? t('actions.editLog') : t('actions.newLog')}</SheetTitle>
                 </SheetHeader>
 
                 <div className="grid gap-4 py-0 pt-2 overflow-y-auto max-h-[calc(100%-80px)] px-1">
                     <div className="grid gap-2">
-                        <Label htmlFor="title">Title</Label>
+                        <Label htmlFor="title">{t('fields.title')}</Label>
                         <Input
                             id="title"
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
-                            placeholder="e.g. Shopping at Costco"
+                            placeholder={t('fields.titlePlaceholder')}
                             className="text-lg"
                         />
                     </div>
 
                     {/* Date Picker */}
                     <div className="grid gap-2">
-                        <Label htmlFor="date">Date</Label>
+                        <Label htmlFor="date">{t('fields.date')}</Label>
                         <Popover>
                             <PopoverTrigger asChild>
                                 <Button
@@ -230,7 +232,7 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
                                     )}
                                 >
                                     <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {date ? format(date, "PPP") : <span>Pick a date</span>}
+                                    {date ? format(date, "PPP") : <span>{t('fields.pickDate')}</span>}
                                 </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0" align="start">
@@ -245,10 +247,10 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
                     </div>
 
                     <div className="grid gap-2">
-                        <Label htmlFor="category">Category</Label>
+                        <Label htmlFor="category">{t('fields.category')}</Label>
                         <Select value={category} onValueChange={setCategory}>
                             <SelectTrigger>
-                                <SelectValue placeholder="Select category" />
+                                <SelectValue placeholder={t('fields.selectCategory')} />
                             </SelectTrigger>
                             <SelectContent>
                                 {categoriesList.length > 0 ? (
@@ -261,7 +263,7 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
                                         </SelectItem>
                                     ))
                                 ) : (
-                                    <div className="p-2 text-sm text-muted-foreground text-center">Loading...</div>
+                                    <div className="p-2 text-sm text-muted-foreground text-center">{t('common.loading')}</div>
                                 )}
                             </SelectContent>
                         </Select>
@@ -277,7 +279,7 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
                             if (fieldId === 'time') {
                                 return (
                                     <div key="time" className="grid gap-2">
-                                        <Label htmlFor="time">Time</Label>
+                                        <Label htmlFor="time">{t('fields.time')}</Label>
                                         <Input
                                             id="time"
                                             type="time"
@@ -290,7 +292,7 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
                             if (fieldId === 'share') {
                                 return (
                                     <div key="share" className="flex items-center justify-between py-2 border rounded-md px-3 bg-muted/5">
-                                        <Label htmlFor="share" className="flex-1 font-medium">Share after saving</Label>
+                                        <Label htmlFor="share" className="flex-1 font-medium">{t('fields.share')}</Label>
                                         <Switch
                                             id="share"
                                             checked={!!customData['share']}
@@ -302,7 +304,7 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
                             if (fieldId === 'amount') {
                                 return (
                                     <div key="amount" className="grid gap-2">
-                                        <Label htmlFor="amount">Amount ($)</Label>
+                                        <Label htmlFor="amount">{t('fields.amount')}</Label>
                                         <Input
                                             id="amount"
                                             type="number"
@@ -317,11 +319,11 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
                             if (fieldId === 'memo') {
                                 return (
                                     <div key="memo" className="grid gap-2">
-                                        <Label htmlFor="memo">Memo</Label>
+                                        <Label htmlFor="memo">{t('fields.memo')}</Label>
                                         <textarea
                                             id="memo"
                                             className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                            placeholder="Additional details..."
+                                            placeholder={t('fields.memoPlaceholder')}
                                             value={memo}
                                             onChange={(e) => setMemo(e.target.value)}
                                         />
@@ -331,7 +333,7 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
                             if (fieldId === 'image_url') {
                                 return (
                                     <div key="image_url" className="grid gap-2">
-                                        <Label htmlFor="image">Image</Label>
+                                        <Label htmlFor="image">{t('fields.image')}</Label>
                                         <Input
                                             id="image"
                                             type="file"
@@ -401,11 +403,11 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
                 <SheetFooter className="absolute bottom-4 left-4 right-4 pb-safe flex gap-3">
                     {selectedLog && (
                         <Button variant="destructive" onClick={handleDelete} className="flex-1 h-12 text-lg">
-                            Delete
+                            {t('actions.delete')}
                         </Button>
                     )}
                     <Button onClick={handleSave} disabled={isUploading} className="flex-1 h-12 text-lg">
-                        {isUploading ? 'Uploading...' : (selectedLog ? 'Update Log' : 'Save Log')}
+                        {isUploading ? t('actions.saving') : (selectedLog ? t('actions.updateLog') : t('actions.saveLog'))}
                     </Button>
                 </SheetFooter>
             </SheetContent>

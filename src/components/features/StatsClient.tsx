@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState } from 'react';
 import { TopBar } from '@/components/layout/TopBar';
+import { useLanguage } from '@/components/providers/LanguageProvider';
 import { Log, Category } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
@@ -32,6 +33,7 @@ type TimeRange = 'week' | 'month' | 'year';
 type ViewType = 'count' | 'amount';
 
 export function StatsClient({ logs, categories }: StatsClientProps) {
+    const { t } = useLanguage();
     const [timeRange, setTimeRange] = useState<TimeRange>('month');
     const [viewType, setViewType] = useState<ViewType>('amount');
     const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -112,14 +114,14 @@ export function StatsClient({ logs, categories }: StatsClientProps) {
 
     const formatValue = (val: number) => {
         if (viewType === 'amount') {
-            return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', signDisplay: 'always' }).format(val);
+            return new Intl.NumberFormat(t('common.locale'), { style: 'currency', currency: t('common.currency'), signDisplay: 'always' }).format(val);
         }
         return val.toString();
     };
 
     return (
         <div className="flex flex-col h-full w-full bg-muted/10">
-            <TopBar title="Statistics" />
+            <TopBar title={t('stats.title')} />
 
             <div className="flex-1 overflow-y-auto p-4 pb-24 space-y-6">
                 {/* Selectors */}
@@ -134,7 +136,7 @@ export function StatsClient({ logs, categories }: StatsClientProps) {
                                     timeRange === r ? "bg-background shadow-sm text-foreground" : "text-muted-foreground"
                                 )}
                             >
-                                {r}
+                                {t(`stats.periods.${r}` as any)}
                             </button>
                         ))}
                     </div>
@@ -145,8 +147,8 @@ export function StatsClient({ logs, categories }: StatsClientProps) {
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="amount">Amount ($)</SelectItem>
-                                <SelectItem value="count">Frequency (Count)</SelectItem>
+                                <SelectItem value="amount">{t('stats.views.amount')}</SelectItem>
+                                <SelectItem value="count">{t('stats.views.count')}</SelectItem>
                             </SelectContent>
                         </Select>
 
@@ -154,11 +156,11 @@ export function StatsClient({ logs, categories }: StatsClientProps) {
                             <SelectTrigger className="flex-1 h-10">
                                 <div className="flex items-center gap-2">
                                     <Filter className="w-3.5 h-3.5 opacity-50" />
-                                    <SelectValue placeholder="Category" />
+                                    <SelectValue placeholder={t('stats.filter.all')} />
                                 </div>
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">All Categories</SelectItem>
+                                <SelectItem value="all">{t('stats.filter.all')}</SelectItem>
                                 {categories.map(cat => (
                                     <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
                                 ))}
@@ -173,7 +175,7 @@ export function StatsClient({ logs, categories }: StatsClientProps) {
                         <CardContent className="p-4 flex flex-col items-center justify-center text-center">
                             <FileText className="w-4 h-4 text-primary mb-1 opacity-60" />
                             <span className="text-2xl font-bold">{totalCount}</span>
-                            <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Entries</span>
+                            <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">{t('stats.kpis.entries')}</span>
                         </CardContent>
                     </Card>
                     <Card className="border-none shadow-sm bg-gradient-to-br from-green-500/5 to-green-500/10">
@@ -183,9 +185,9 @@ export function StatsClient({ logs, categories }: StatsClientProps) {
                                 "text-2xl font-bold truncate w-full",
                                 totalAmount > 0 ? "text-blue-600" : totalAmount < 0 ? "text-red-600" : ""
                             )}>
-                                {new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 }).format(totalAmount)}
+                                {new Intl.NumberFormat(t('common.locale'), { notation: 'compact', maximumFractionDigits: 1 }).format(totalAmount)}
                             </span>
-                            <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Net Balance</span>
+                            <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">{t('stats.kpis.netBalance')}</span>
                         </CardContent>
                     </Card>
                 </div>
@@ -195,7 +197,7 @@ export function StatsClient({ logs, categories }: StatsClientProps) {
                     <CardHeader className="pb-2">
                         <CardTitle className="text-sm font-semibold flex items-center gap-2">
                             <TrendingUp className="w-4 h-4 text-primary" />
-                            {viewType === 'amount' ? 'Financial Trend' : 'Activity Trend'}
+                            {viewType === 'amount' ? t('stats.charts.trendFinancial') : t('stats.charts.trendActivity')}
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="h-[250px] p-2 pt-0">
@@ -255,7 +257,7 @@ export function StatsClient({ logs, categories }: StatsClientProps) {
                 {/* Pie Chart */}
                 <Card className="border-none shadow-sm">
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-semibold">Distribution by Category</CardTitle>
+                        <CardTitle className="text-sm font-semibold">{t('stats.charts.distribution')}</CardTitle>
                     </CardHeader>
                     <CardContent className="min-h-[250px] flex flex-col">
                         {distributionData.length > 0 ? (
@@ -301,7 +303,7 @@ export function StatsClient({ logs, categories }: StatsClientProps) {
                             </>
                         ) : (
                             <div className="h-[200px] flex items-center justify-center text-muted-foreground text-sm">
-                                No data for this period
+                                {t('stats.charts.noData')}
                             </div>
                         )}
                     </CardContent>

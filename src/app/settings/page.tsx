@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { TopBar } from '@/components/layout/TopBar';
 import { FieldDefinition, FieldType, Category } from '@/lib/types';
 import { getFieldDefinitions, createFieldDefinition, deleteFieldDefinition, getCategories, createCategory, updateCategory, deleteCategory, setDefaultCategory } from '@/app/actions';
+import { useLanguage } from '@/components/providers/LanguageProvider';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -117,6 +118,7 @@ function SortableFieldRow({ id, field, isCustom, toggleVisible }: SortableFieldR
 }
 
 export default function SettingsPage() {
+    const { t, language, setLanguage } = useLanguage();
     const [fields, setFields] = useState<FieldDefinition[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
 
@@ -170,10 +172,14 @@ export default function SettingsPage() {
             setCategories(catsData);
         } catch (e) {
             console.error(e);
-        } finally {
-            // Data loaded
         }
     };
+
+    // Standard fields with translations
+    const translatedStandardFields = STANDARD_FIELDS.map(f => ({
+        ...f,
+        label: t(`fields.${f.id}` as any)
+    }));
 
     const handleCreateField = async () => {
         if (!newLabel) return;
@@ -305,15 +311,38 @@ export default function SettingsPage() {
 
     return (
         <div className="flex flex-col h-full w-full bg-muted/10">
-            <TopBar title="Settings" />
+            <TopBar title={t('settings.title')} />
 
             <div className="flex-1 overflow-y-auto p-4 pb-32 space-y-8">
+                {/* Language Selection */}
+                <div className="space-y-4">
+                    <div className="px-1">
+                        <h3 className="font-semibold text-lg">{t('settings.language')}</h3>
+                    </div>
+                    <div className="flex gap-2 p-1 bg-muted/50 rounded-lg max-w-[200px]">
+                        <Button
+                            variant={language === 'ko' ? 'default' : 'ghost'}
+                            className="flex-1 h-9"
+                            onClick={() => setLanguage('ko')}
+                        >
+                            한국어
+                        </Button>
+                        <Button
+                            variant={language === 'en' ? 'default' : 'ghost'}
+                            className="flex-1 h-9"
+                            onClick={() => setLanguage('en')}
+                        >
+                            English
+                        </Button>
+                    </div>
+                </div>
+
                 {/* Categories Section */}
                 <div className="space-y-4">
                     <div className="flex justify-between items-center px-1">
                         <div>
-                            <h3 className="font-semibold text-lg">Categories</h3>
-                            <p className="text-sm text-muted-foreground">Manage categories & field layouts.</p>
+                            <h3 className="font-semibold text-lg">{t('settings.categories.title')}</h3>
+                            <p className="text-sm text-muted-foreground">{t('settings.categories.description')}</p>
                         </div>
                         <Button size="sm" onClick={() => {
                             setSheetMode('create_category');
@@ -321,7 +350,7 @@ export default function SettingsPage() {
                             // Default to common system fields
                             setVisibleFields(['time', 'amount', 'memo', 'image_url', 'share']);
                         }}>
-                            <Plus className="w-4 h-4 mr-1" /> Add
+                            <Plus className="w-4 h-4 mr-1" /> {t('actions.add')}
                         </Button>
                     </div>
 
@@ -335,7 +364,7 @@ export default function SettingsPage() {
                                     <div className="flex items-center gap-2">
                                         <h4 className="font-semibold text-base">{cat.name}</h4>
                                         {cat.is_default && (
-                                            <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium">Default</span>
+                                            <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium">{t('common.default')}</span>
                                         )}
                                     </div>
                                 </div>
@@ -380,13 +409,13 @@ export default function SettingsPage() {
                     {sheetMode === 'create_field' ? (
                         <div className="grid gap-6">
                             <SheetHeader className="text-left">
-                                <SheetTitle>New Custom Field</SheetTitle>
-                                <SheetDescription>Add a new tracking field.</SheetDescription>
+                                <SheetTitle>{t('settings.fields.newCustom')}</SheetTitle>
+                                <SheetDescription>{t('settings.fields.description')}</SheetDescription>
                             </SheetHeader>
                             <div className="space-y-3">
-                                <Label>Label</Label>
+                                <Label>{t('settings.fields.label')}</Label>
                                 <Input
-                                    placeholder="e.g. Distance (km)"
+                                    placeholder={t('settings.fields.placeholder')}
                                     value={newLabel}
                                     onChange={(e) => setNewLabel(e.target.value)}
                                     className="text-lg"
@@ -394,7 +423,7 @@ export default function SettingsPage() {
                                 />
                             </div>
                             <div className="space-y-3">
-                                <Label>Data Type</Label>
+                                <Label>{t('settings.fields.type')}</Label>
                                 <Popover open={openTypeSelect} onOpenChange={setOpenTypeSelect}>
                                     <PopoverTrigger asChild>
                                         <Button
@@ -453,24 +482,24 @@ export default function SettingsPage() {
                                 </Popover>
                             </div>
                             <div className="flex gap-3">
-                                <Button variant="outline" className="flex-1" onClick={() => setSheetMode('edit_category')}>Back</Button>
-                                <Button className="flex-1" onClick={handleCreateField} disabled={isSaving}>Create Field</Button>
+                                <Button variant="outline" className="flex-1" onClick={() => setSheetMode('edit_category')}>{t('actions.back')}</Button>
+                                <Button className="flex-1" onClick={handleCreateField} disabled={isSaving}>{t('settings.fields.create')}</Button>
                             </div>
                         </div>
                     ) : (
                         <div className="flex flex-col gap-6 w-full overflow-x-hidden px-4">
                             <SheetHeader className="text-left px-0">
                                 <SheetTitle>
-                                    {sheetMode === 'create_category' ? 'New Category' : 'Edit Category'}
+                                    {sheetMode === 'create_category' ? t('settings.categories.new') : t('settings.categories.edit')}
                                 </SheetTitle>
                                 <SheetDescription>
-                                    Configure how this category&apos;s logs look.
+                                    {t('settings.categories.description')}
                                 </SheetDescription>
                             </SheetHeader>
 
                             {/* Basic Info */}
                             <div className="space-y-3">
-                                <Label>Name & Icon</Label>
+                                <Label>{t('settings.appearance.nameAndIcon')}</Label>
                                 <div className="flex gap-3">
                                     <Popover>
                                         <PopoverTrigger asChild>
@@ -491,7 +520,7 @@ export default function SettingsPage() {
                                     </Popover>
 
                                     <Input
-                                        placeholder="Category Name"
+                                        placeholder={t('settings.categories.namePlaceholder')}
                                         value={catName}
                                         onChange={e => setCatName(e.target.value)}
                                         className="text-lg h-14 flex-1"
@@ -501,7 +530,7 @@ export default function SettingsPage() {
 
                             {/* Appearance */}
                             <div className="space-y-4 w-full">
-                                <Label>Color</Label>
+                                <Label>{t('settings.appearance.color')}</Label>
                                 <div className="flex flex-wrap gap-3 w-full">
                                     {PRESET_COLORS.map(color => (
                                         <button
@@ -522,20 +551,20 @@ export default function SettingsPage() {
                             {/* Log Page Configuration */}
                             <div className="space-y-3 w-full">
                                 <div className="flex justify-between items-center">
-                                    <Label className="text-base font-semibold">Log Fields</Label>
+                                    <Label className="text-base font-semibold">{t('settings.fields.title')}</Label>
                                     <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setSheetMode('create_field')}>
-                                        <Plus className="w-3 h-3 mr-1" /> Custom Field
+                                        <Plus className="w-3 h-3 mr-1" /> {t('settings.fields.addCustom')}
                                     </Button>
                                     <span className="text-xs text-muted-foreground ml-auto pr-2">
-                                        {visibleFields.length} active
+                                        {visibleFields.length} {language === 'ko' ? '활성' : 'active'}
                                     </span>
                                 </div>
-                                <p className="text-xs text-muted-foreground">Select which fields are visible for this category.</p>
+                                <p className="text-xs text-muted-foreground">{t('settings.fields.description')}</p>
 
                                 <div className="space-y-4">
                                     {/* Active Fields (Ordered) */}
                                     <div>
-                                        <Label className="text-sm font-medium mb-2 block">Active Fields (Ordered)</Label>
+                                        <Label className="text-sm font-medium mb-2 block">{t('settings.fields.active')}</Label>
                                         <div className="flex flex-col gap-2 border rounded-xl p-2 bg-muted/5 w-full">
                                             <DndContext
                                                 sensors={sensors}
@@ -549,7 +578,7 @@ export default function SettingsPage() {
                                                     strategy={verticalListSortingStrategy}
                                                 >
                                                     {visibleFields.map((fieldId) => {
-                                                        const standardField = STANDARD_FIELDS.find(f => f.id === fieldId);
+                                                        const standardField = translatedStandardFields.find(f => f.id === fieldId);
                                                         const customField = fields.find(f => f.key_name === fieldId);
                                                         const field = standardField || customField;
 
@@ -577,7 +606,7 @@ export default function SettingsPage() {
 
                                             {visibleFields.length === 0 && (
                                                 <div className="text-center py-4 text-sm text-muted-foreground">
-                                                    No active fields. Add from below.
+                                                    {t('settings.fields.noActive')}
                                                 </div>
                                             )}
                                         </div>
@@ -585,9 +614,9 @@ export default function SettingsPage() {
 
                                     {/* Inactive Fields */}
                                     <div>
-                                        <Label className="text-sm font-medium mb-2 block">Available Fields</Label>
+                                        <Label className="text-sm font-medium mb-2 block">{t('settings.fields.available')}</Label>
                                         <div className="flex flex-col gap-2 border rounded-xl p-2 bg-muted/5 w-full">
-                                            {[...STANDARD_FIELDS, ...fields.map(f => ({ ...f, id: f.key_name, originalId: f.id, icon: '📋' }))]
+                                            {[...translatedStandardFields, ...fields.map(f => ({ ...f, id: f.key_name, originalId: f.id, icon: '📋' }))]
                                                 .filter(f => !visibleFields.includes(f.id))
                                                 .map(field => {
                                                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -602,7 +631,7 @@ export default function SettingsPage() {
                                                                 {isCustom ? (
                                                                     <span className="text-[10px] uppercase bg-muted px-1 rounded text-muted-foreground flex-shrink-0">{customField.type}</span>
                                                                 ) : (
-                                                                    <span className="text-[10px] uppercase bg-primary/5 px-1 rounded text-primary/70 flex-shrink-0 border border-primary/10 font-semibold tracking-wider">SYSTEM</span>
+                                                                    <span className="text-[10px] uppercase bg-primary/5 px-1 rounded text-primary/70 flex-shrink-0 border border-primary/10 font-semibold tracking-wider">{t('fields.system')}</span>
                                                                 )}
                                                             </div>
                                                             <div className="flex items-center gap-2">
@@ -638,7 +667,7 @@ export default function SettingsPage() {
                                 onClick={handleSaveCategory}
                                 disabled={isSaving}
                             >
-                                {isSaving ? 'Saving...' : 'Save Configuration'}
+                                {isSaving ? t('actions.saving') : t('settings.categories.saveConfig')}
                             </Button>
                         </div>
                     )}
@@ -651,13 +680,13 @@ export default function SettingsPage() {
                     <SheetHeader className="mb-4 text-left">
                         <SheetTitle className="text-destructive flex items-center gap-2">
                             <Trash2 className="w-5 h-5" />
-                            Delete {deleteConfirm?.type === 'category' ? 'Category' : 'Field'}?
+                            {t('settings.confirmDelete.title', { type: deleteConfirm?.type === 'category' ? t('settings.confirmDelete.category') : t('settings.confirmDelete.field') })}
                         </SheetTitle>
                     </SheetHeader>
                     <div className="flex gap-3 mt-6">
-                        <Button variant="outline" className="flex-1 h-12" onClick={() => setDeleteConfirm(null)}>Cancel</Button>
+                        <Button variant="outline" className="flex-1 h-12" onClick={() => setDeleteConfirm(null)}>{t('actions.cancel')}</Button>
                         <Button variant="destructive" className="flex-1 h-12" onClick={handleDelete} disabled={isSaving}>
-                            {isSaving ? 'Deleting...' : 'Delete'}
+                            {isSaving ? t('actions.deleting') : t('actions.delete')}
                         </Button>
                     </div>
                 </SheetContent>

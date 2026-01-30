@@ -32,6 +32,8 @@ export const viewport: Viewport = {
   userScalable: false,
 };
 
+import { LanguageProvider } from "@/components/providers/LanguageProvider";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -43,9 +45,11 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased h-full w-full overflow-hidden`}
         suppressHydrationWarning
       >
-        <ClientLayout>
-          {children}
-        </ClientLayout>
+        <LanguageProvider>
+          <ClientLayout>
+            {children}
+          </ClientLayout>
+        </LanguageProvider>
       </body>
     </html>
   );
