@@ -1,48 +1,59 @@
+"use client";
 
 import React from 'react';
-import { Menu, Plus, Search } from 'lucide-react';
+import { Plus, Search, Calendar, PieChart, Settings } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
 import { useLayoutContext } from '@/components/providers/LayoutProvider';
 import { useLogContext } from '@/components/providers/LogProvider';
-import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 export function BottomNav() {
-    const { openSidebar, openSearch } = useLayoutContext();
+    const { } = useLayoutContext();
     const { openDrawer } = useLogContext();
+    const pathname = usePathname();
+    const router = useRouter();
+
+    const navItems = [
+        { label: 'Calendar', icon: Calendar, href: '/calendar', action: () => router.push('/calendar') },
+        { label: 'Stats', icon: PieChart, href: '/stats', action: () => router.push('/stats') },
+        { label: 'Add', icon: Plus, isAction: true, action: () => openDrawer() },
+        { label: 'Search', icon: Search, href: '/search', action: () => router.push('/search') },
+        { label: 'Settings', icon: Settings, href: '/settings', action: () => router.push('/settings') },
+    ];
 
     return (
-        <div className="fixed bottom-0 w-full bg-background/80 backdrop-blur-md border-t z-50 pb-safe">
-            <div className="flex justify-around items-center h-16 px-6">
+        <div className="fixed bottom-0 w-full bg-background/80 backdrop-blur-md border-t z-50 pb-safe shadow-[0_-1px_10px_rgba(0,0,0,0.05)]">
+            <div className="flex justify-between items-center h-14 px-2 max-w-md mx-auto">
+                {navItems.map((item) => {
+                    const isActive = item.href && pathname === item.href;
+                    const Icon = item.icon;
 
-                {/* Menu (Hamburger) */}
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-14 w-14 hover:bg-transparent text-muted-foreground hover:text-primary"
-                    onClick={openSidebar}
-                >
-                    <Menu className="w-12 h-12" />
-                </Button>
+                    if (item.isAction) {
+                        return (
+                            <button
+                                key="add-btn"
+                                onClick={item.action}
+                                className="flex flex-col items-center justify-center -mt-6 bg-primary text-primary-foreground h-12 w-12 rounded-full shadow-lg active:scale-95 transition-transform"
+                            >
+                                <Plus className="w-7 h-7" />
+                            </button>
+                        );
+                    }
 
-                {/* Add Button (Center) */}
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-16 w-16 hover:bg-transparent text-primary hover:text-primary scale-125 -mt-4 shadow-sm bg-background/50 rounded-full border border-border/50 backdrop-blur-sm"
-                    onClick={() => openDrawer()}
-                >
-                    <Plus className="w-14 h-14" />
-                </Button>
-
-                {/* Search */}
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-14 w-14 hover:bg-transparent text-muted-foreground hover:text-primary"
-                    onClick={openSearch}
-                >
-                    <Search className="w-12 h-12" />
-                </Button>
-
+                    return (
+                        <button
+                            key={item.label}
+                            onClick={item.action}
+                            className={cn(
+                                "flex flex-col items-center justify-center flex-1 py-1 transition-colors",
+                                isActive ? "text-primary" : "text-muted-foreground hover:text-primary/70"
+                            )}
+                        >
+                            <Icon className={cn("w-5 h-5", isActive && "stroke-[2.5px]")} />
+                            <span className="text-[10px] mt-0.5 font-medium">{item.label}</span>
+                        </button>
+                    );
+                })}
             </div>
         </div>
     );

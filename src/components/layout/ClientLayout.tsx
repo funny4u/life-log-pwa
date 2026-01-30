@@ -7,7 +7,6 @@ import { LogDrawer } from '../features/LogDrawer';
 import { LogProvider, useLogContext } from '@/components/providers/LogProvider';
 import { LayoutProvider } from '@/components/providers/LayoutProvider';
 import { Sidebar } from './Sidebar';
-import { SearchOverlay } from './SearchOverlay';
 
 function ClientLayoutContent({ children }: { children: React.ReactNode }) {
     const { isDrawerOpen, closeDrawer } = useLogContext();
@@ -22,7 +21,6 @@ function ClientLayoutContent({ children }: { children: React.ReactNode }) {
             <LogDrawer open={isDrawerOpen} onOpenChange={(open) => !open && closeDrawer()} />
             <BottomNav />
             <Sidebar />
-            <SearchOverlay />
         </div>
     );
 }
