@@ -1,10 +1,14 @@
 import React from 'react';
 import { Log, Category } from '@/lib/types';
-import { format, isToday, isYesterday } from 'date-fns';
+import { format, isToday, isYesterday, parseISO } from 'date-fns';
 import { LogItemRow } from './LogItemRow';
 
 function GroupHeader({ dateStr }: { dateStr: string }) {
-    const date = new Date(dateStr);
+    // Parse the date string simply as local midnight to avoid timezone shifts
+    // new Date('YYYY-MM-DD') is treated as UTC in some contexts, causing shift to previous day
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const date = new Date(year, month - 1, day);
+
     let label = format(date, 'MMM d, yyyy');
     if (isToday(date)) label = 'Today';
     if (isYesterday(date)) label = 'Yesterday';
@@ -19,9 +23,12 @@ function GroupHeader({ dateStr }: { dateStr: string }) {
 interface LogListViewProps {
     logs: Log[];
     categoryMap: Record<string, Category>;
+    isSelectionMode?: boolean;
+    selectedIds?: Set<string>;
+    onToggleSelection?: (id: string) => void;
 }
 
-export function LogListView({ logs, categoryMap }: LogListViewProps) {
+export function LogListView({ logs, categoryMap, isSelectionMode, selectedIds, onToggleSelection }: LogListViewProps) {
     // Group by date
     const groupedLogs = logs.reduce((acc, log) => {
         const dateKey = log.date; // string YYYY-MM-DD
@@ -46,9 +53,16 @@ export function LogListView({ logs, categoryMap }: LogListViewProps) {
             {dates.map((date) => (
                 <div key={date}>
                     <GroupHeader dateStr={date} />
-                    <div className="divide-y">
+                    <div className="divide-y relative">
                         {groupedLogs[date].map((log) => (
-                            <LogItemRow key={log.id} log={log} categoryDef={categoryMap[log.category]} />
+                            <LogItemRow
+                                key={log.id}
+                                log={log}
+                                categoryDef={categoryMap[log.category]}
+                                isSelectionMode={isSelectionMode}
+                                isSelected={selectedIds?.has(log.id)}
+                                onToggleSelection={onToggleSelection}
+                            />
                         ))}
                     </div>
                 </div>

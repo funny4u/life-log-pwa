@@ -3,6 +3,9 @@ const fs = require('fs');
 require('dotenv').config({ path: '.env.local' });
 
 async function run() {
+    console.log('Checking env:', process.env.POSTGRES_URL ? 'Loaded' : 'Not Loaded');
+    if (process.env.POSTGRES_URL) console.log('URL starts with:', process.env.POSTGRES_URL.substring(0, 10));
+
     const client = new Client({
         connectionString: process.env.POSTGRES_URL,
         ssl: { rejectUnauthorized: false }
@@ -10,7 +13,7 @@ async function run() {
 
     try {
         await client.connect();
-        const sql = fs.readFileSync('migration_category_settings.sql', 'utf8');
+        const sql = fs.readFileSync('migration_fix_schema.sql', 'utf8');
         await client.query(sql);
         console.log('Migration applied successfully');
     } catch (err) {

@@ -3,9 +3,8 @@
 import React, { useEffect, useState } from 'react';
 import { TopBar } from '@/components/layout/TopBar';
 import { FieldDefinition, FieldType, Category } from '@/lib/types';
-import { getFieldDefinitions, createFieldDefinition, deleteFieldDefinition, toggleFieldVisibility, getCategories, createCategory, updateCategory, deleteCategory, setDefaultCategory } from '@/app/actions';
+import { getFieldDefinitions, createFieldDefinition, deleteFieldDefinition, getCategories, createCategory, updateCategory, deleteCategory, setDefaultCategory } from '@/app/actions';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -25,16 +24,14 @@ import EmojiPicker, { Theme } from 'emoji-picker-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Trash2, GripVertical, Check, X, Pencil, Type, Hash, Clock, CheckSquare, ChevronsUpDown, Calendar, Link, Mail, Phone, Percent, DollarSign, Timer, Star, ScanBarcode, Users, File } from 'lucide-react';
+import { Plus, Trash2, GripVertical, Check, Pencil, Type, Hash, Clock, CheckSquare, ChevronsUpDown, Calendar, Link, Mail, Phone, Percent, DollarSign, Timer, Star, ScanBarcode, Users, File } from 'lucide-react';
 // ... existing code ...
 import {
     Sheet,
     SheetContent,
     SheetHeader,
     SheetTitle,
-    SheetFooter,
     SheetDescription,
 } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
@@ -76,7 +73,11 @@ const FIELD_TYPES = [
 
 interface SortableFieldRowProps {
     id: string;
-    field: any;
+    field: {
+        label?: string;
+        icon: string | React.ReactNode;
+        type?: string;
+    };
     isCustom: boolean;
     toggleVisible: (id: string) => void;
 }
@@ -135,7 +136,6 @@ export default function SettingsPage() {
     const [catColor, setCatColor] = useState('#EF4444');
     const [catIcon, setCatIcon] = useState('🏷️');
 
-    const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
@@ -161,7 +161,6 @@ export default function SettingsPage() {
     }, [isSheetOpen]);
 
     const loadData = async () => {
-        setIsLoading(true);
         try {
             const [fieldsData, catsData] = await Promise.all([
                 getFieldDefinitions(),
@@ -172,7 +171,7 @@ export default function SettingsPage() {
         } catch (e) {
             console.error(e);
         } finally {
-            setIsLoading(false);
+            // Data loaded
         }
     };
 
@@ -465,7 +464,7 @@ export default function SettingsPage() {
                                     {sheetMode === 'create_category' ? 'New Category' : 'Edit Category'}
                                 </SheetTitle>
                                 <SheetDescription>
-                                    Configure how this category's logs look.
+                                    Configure how this category&apos;s logs look.
                                 </SheetDescription>
                             </SheetHeader>
 
@@ -591,7 +590,9 @@ export default function SettingsPage() {
                                             {[...STANDARD_FIELDS, ...fields.map(f => ({ ...f, id: f.key_name, originalId: f.id, icon: '📋' }))]
                                                 .filter(f => !visibleFields.includes(f.id))
                                                 .map(field => {
-                                                    const isCustom = !!(field as any).originalId;
+                                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                                    const customField = field as any;
+                                                    const isCustom = !!customField.originalId;
 
                                                     return (
                                                         <div key={field.id} className="flex items-center gap-3 p-2 bg-card/50 border border-dashed rounded-lg">
@@ -599,7 +600,7 @@ export default function SettingsPage() {
                                                                 <span className="text-xl flex-shrink-0">{field.icon}</span>
                                                                 <span className="text-base font-medium truncate">{field.label}</span>
                                                                 {isCustom ? (
-                                                                    <span className="text-[10px] uppercase bg-muted px-1 rounded text-muted-foreground flex-shrink-0">{(field as any).type}</span>
+                                                                    <span className="text-[10px] uppercase bg-muted px-1 rounded text-muted-foreground flex-shrink-0">{customField.type}</span>
                                                                 ) : (
                                                                     <span className="text-[10px] uppercase bg-primary/5 px-1 rounded text-primary/70 flex-shrink-0 border border-primary/10 font-semibold tracking-wider">SYSTEM</span>
                                                                 )}
@@ -612,7 +613,7 @@ export default function SettingsPage() {
                                                                         className="h-8 w-8 text-muted-foreground hover:text-destructive"
                                                                         onClick={(e) => {
                                                                             e.stopPropagation();
-                                                                            if ((field as any).originalId) setDeleteConfirm({ type: 'field', id: (field as any).originalId });
+                                                                            if (customField.originalId) setDeleteConfirm({ type: 'field', id: customField.originalId });
                                                                         }}
                                                                     >
                                                                         <Trash2 className="w-4 h-4" />

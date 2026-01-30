@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Calendar, PieChart, Settings, X, LogOut } from 'lucide-react';
+import { Calendar, PieChart, Settings, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { useLayoutContext } from '@/components/providers/LayoutProvider';

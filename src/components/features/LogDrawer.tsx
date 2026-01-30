@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Switch } from '@/components/ui/switch';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from '@/components/ui/sheet';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -39,7 +39,7 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
     // Dynamic Fields & Categories State
     const [customFields, setCustomFields] = useState<FieldDefinition[]>([]);
     const [categoriesList, setCategoriesList] = useState<Category[]>([]);
-    const [customData, setCustomData] = useState<Record<string, any>>({});
+    const [customData, setCustomData] = useState<Record<string, any>>({}); // eslint-disable-line @typescript-eslint/no-explicit-any
 
     // Fetch definitions on load and when drawer opens
     React.useEffect(() => {
@@ -79,15 +79,6 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
             setImageFile(null);
         }
     }, [selectedLog, open, categoriesList]);
-
-    const commonEmojis = ['🚗', '🍳', '🛒', '🏥', '📅', '🎉', '💼', '🏠', '🏋️', '📖'];
-
-    const isFieldVisible = (fieldId: string) => {
-        if (!category) return true;
-        const currentCat = categoriesList.find(c => c.name === category);
-        if (!currentCat?.settings?.visible_fields) return true;
-        return currentCat.settings.visible_fields.includes(fieldId);
-    };
 
     const handleDelete = async () => {
         if (!selectedLog) return;

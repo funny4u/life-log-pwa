@@ -26,6 +26,7 @@ export interface Log {
     emoji?: string | null;
     start_time?: string | null;
     end_time?: string | null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     custom_data?: Record<string, any> | null;
 }
 

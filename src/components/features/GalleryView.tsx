@@ -6,6 +6,8 @@ import { format } from 'date-fns';
 import { useLogContext } from '@/components/providers/LogProvider';
 import { Badge } from '@/components/ui/badge';
 
+import Image from 'next/image';
+
 interface GalleryViewProps {
     logs: Log[];
     categoryMap: Record<string, Category>;
@@ -37,9 +39,10 @@ export function GalleryView({ logs, categoryMap }: GalleryViewProps) {
                         {/* Image or Placeholder */}
                         <div className="aspect-square w-full bg-muted/30 relative flex items-center justify-center overflow-hidden">
                             {log.image_url ? (
-                                <img
+                                <Image
                                     src={log.image_url}
                                     alt={log.title}
+                                    fill
                                     className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                                 />
                             ) : (

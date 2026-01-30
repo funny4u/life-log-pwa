@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { Menu, Plus, Search } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { useLayoutContext } from '@/components/providers/LayoutProvider';
 import { useLogContext } from '@/components/providers/LogProvider';
 import { Button } from '@/components/ui/button';

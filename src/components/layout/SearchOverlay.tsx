@@ -8,7 +8,6 @@ import { useLayoutContext } from '@/components/providers/LayoutProvider';
 import { Log, Category } from '@/lib/types';
 import { getLogs, getCategories } from '@/app/actions';
 import { LogListView } from '@/components/features/LogList';
-import { GalleryView } from '@/components/features/GalleryView';
 
 export function SearchOverlay() {
     const { isSearchOpen, closeSearch } = useLayoutContext();
@@ -20,22 +19,26 @@ export function SearchOverlay() {
     // Fetch data when opened
     useEffect(() => {
         if (isSearchOpen && logs.length === 0) {
-            setIsLoading(true);
-            Promise.all([getLogs(), getCategories()])
-                .then(([fetchedLogs, fetchedCats]) => {
+            const fetchData = async () => {
+                setIsLoading(true);
+                try {
+                    const [fetchedLogs, fetchedCats] = await Promise.all([getLogs(), getCategories()]);
                     setLogs(fetchedLogs);
                     setCategories(fetchedCats);
-                })
-                .finally(() => setIsLoading(false));
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+            fetchData();
         }
     }, [isSearchOpen, logs.length]);
 
     // Cleanup query on close
     useEffect(() => {
-        if (!isSearchOpen) {
+        if (!isSearchOpen && searchQuery !== '') {
             setSearchQuery('');
         }
-    }, [isSearchOpen]);
+    }, [isSearchOpen, searchQuery]);
 
     const categoryMap = React.useMemo(() => {
         return categories.reduce((acc, cat) => {

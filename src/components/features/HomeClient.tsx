@@ -5,24 +5,16 @@ import { Log, Category } from '@/lib/types';
 import { TopBar } from '@/components/layout/TopBar';
 import { LogListView } from '@/components/features/LogList';
 import { GalleryView } from '@/components/features/GalleryView';
-import { LayoutGrid, List as ListIcon, Search, SlidersHorizontal, ArrowUpDown, X } from 'lucide-react';
+import { bulkDeleteLogs } from '@/app/actions';
+import { LayoutGrid, List as ListIcon, SlidersHorizontal, ArrowUpDown, CheckSquare, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
 import {
     Popover,
     PopoverContent,
     PopoverTrigger,
 } from '@/components/ui/popover';
-import {
-    Sheet,
-    SheetContent,
-    SheetHeader,
-    SheetTitle,
-} from '@/components/ui/sheet';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import { Separator } from '@/components/ui/separator'; // Need to make sure Separator exists or use hr
 
 interface HomeClientProps {
     initialLogs: Log[];
@@ -31,6 +23,11 @@ interface HomeClientProps {
 
 export function HomeClient({ initialLogs, categories }: HomeClientProps) {
     const [viewMode, setViewMode] = useState<'list' | 'gallery'>('list');
+
+    // Selection State
+    const [isSelectionMode, setIsSelectionMode] = useState(false);
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    const [isDeleting, setIsDeleting] = useState(false);
 
     // Filter & Sort State
     const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
@@ -74,71 +71,137 @@ export function HomeClient({ initialLogs, categories }: HomeClientProps) {
         return filteredLogs.reduce((sum, log) => sum + (log.amount || 0), 0);
     }, [filteredLogs]);
 
+    // Selection Handlers
+    const toggleSelectionMode = () => {
+        setIsSelectionMode(!isSelectionMode);
+        setSelectedIds(new Set());
+    };
+
+    const toggleItemSelection = (id: string) => {
+        const newSet = new Set(selectedIds);
+        if (newSet.has(id)) {
+            newSet.delete(id);
+        } else {
+            newSet.add(id);
+        }
+        setSelectedIds(newSet);
+    };
+
+    const handleBulkDelete = async () => {
+        if (selectedIds.size === 0) return;
+        if (!confirm(`Are you sure you want to delete ${selectedIds.size} logs?`)) return;
+
+        setIsDeleting(true);
+        try {
+            await bulkDeleteLogs(Array.from(selectedIds));
+            setIsSelectionMode(false);
+            setSelectedIds(new Set());
+        } catch (error) {
+            console.error(error);
+            alert('Failed to delete logs');
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
     return (
         <div className="flex flex-col h-full w-full relative">
             <TopBar
-                title="My Logs"
+                title={isSelectionMode ? `${selectedIds.size} Selected` : "My Logs"}
                 actions={
                     <div className="flex items-center gap-2">
-                        {/* View Settings Popover */}
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8">
-                                    <SlidersHorizontal className="w-5 h-5" />
+                        {isSelectionMode ? (
+                            <>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="text-muted-foreground"
+                                    onClick={toggleSelectionMode}
+                                >
+                                    <X className="w-5 h-5" />
                                 </Button>
-                            </PopoverTrigger>
-                            <PopoverContent align="end" className="w-56 p-4">
-                                <div className="space-y-4">
-                                    <div>
-                                        <h4 className="font-medium mb-2 text-sm text-muted-foreground">View Mode</h4>
-                                        <div className="flex items-center bg-muted/50 rounded-lg p-1 h-9">
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className={cn("flex-1 h-7 rounded-md text-xs", viewMode === 'list' && "bg-background shadow-sm")}
-                                                onClick={() => setViewMode('list')}
-                                            >
-                                                <ListIcon className="w-3 h-3 mr-1" /> List
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className={cn("flex-1 h-7 rounded-md text-xs", viewMode === 'gallery' && "bg-background shadow-sm")}
-                                                onClick={() => setViewMode('gallery')}
-                                            >
-                                                <LayoutGrid className="w-3 h-3 mr-1" /> Gallery
-                                            </Button>
-                                        </div>
-                                    </div>
+                                <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    disabled={selectedIds.size === 0 || isDeleting}
+                                    onClick={handleBulkDelete}
+                                    className="h-8 px-3"
+                                >
+                                    <Trash2 className="w-4 h-4 mr-2" />
+                                    Delete
+                                </Button>
+                            </>
+                        ) : (
+                            <>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-muted-foreground hover:text-primary"
+                                    onClick={toggleSelectionMode}
+                                >
+                                    <CheckSquare className="w-5 h-5" />
+                                </Button>
+                                {/* View Settings Popover */}
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                                            <SlidersHorizontal className="w-5 h-5" />
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent align="end" className="w-56 p-4">
+                                        <div className="space-y-4">
+                                            <div>
+                                                <h4 className="font-medium mb-2 text-sm text-muted-foreground">View Mode</h4>
+                                                <div className="flex items-center bg-muted/50 rounded-lg p-1 h-9">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className={cn("flex-1 h-7 rounded-md text-xs", viewMode === 'list' && "bg-background shadow-sm")}
+                                                        onClick={() => setViewMode('list')}
+                                                    >
+                                                        <ListIcon className="w-3 h-3 mr-1" /> List
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className={cn("flex-1 h-7 rounded-md text-xs", viewMode === 'gallery' && "bg-background shadow-sm")}
+                                                        onClick={() => setViewMode('gallery')}
+                                                    >
+                                                        <LayoutGrid className="w-3 h-3 mr-1" /> Gallery
+                                                    </Button>
+                                                </div>
+                                            </div>
 
-                                    <div className="h-px bg-border" />
+                                            <div className="h-px bg-border" />
 
-                                    <div>
-                                        <h4 className="font-medium mb-2 text-sm text-muted-foreground">Sort By</h4>
-                                        <div className="grid gap-2">
-                                            <Button
-                                                variant={sortConfig.key === 'date' ? 'secondary' : 'ghost'}
-                                                size="sm"
-                                                onClick={() => setSortConfig(prev => ({ key: 'date', direction: prev.key === 'date' && prev.direction === 'desc' ? 'asc' : 'desc' }))}
-                                                className="justify-between h-8 text-xs"
-                                            >
-                                                <span>Date</span>
-                                                {sortConfig.key === 'date' && <ArrowUpDown className="w-3 h-3" />}
-                                            </Button>
-                                            <Button
-                                                variant={sortConfig.key === 'amount' ? 'secondary' : 'ghost'}
-                                                size="sm"
-                                                onClick={() => setSortConfig(prev => ({ key: 'amount', direction: prev.key === 'amount' && prev.direction === 'desc' ? 'asc' : 'desc' }))}
-                                                className="justify-between h-8 text-xs"
-                                            >
-                                                <span>Amount</span>
-                                                {sortConfig.key === 'amount' && <ArrowUpDown className="w-3 h-3" />}
-                                            </Button>
+                                            <div>
+                                                <h4 className="font-medium mb-2 text-sm text-muted-foreground">Sort By</h4>
+                                                <div className="grid gap-2">
+                                                    <Button
+                                                        variant={sortConfig.key === 'date' ? 'secondary' : 'ghost'}
+                                                        size="sm"
+                                                        onClick={() => setSortConfig(prev => ({ key: 'date', direction: prev.key === 'date' && prev.direction === 'desc' ? 'asc' : 'desc' }))}
+                                                        className="justify-between h-8 text-xs"
+                                                    >
+                                                        <span>Date</span>
+                                                        {sortConfig.key === 'date' && <ArrowUpDown className="w-3 h-3" />}
+                                                    </Button>
+                                                    <Button
+                                                        variant={sortConfig.key === 'amount' ? 'secondary' : 'ghost'}
+                                                        size="sm"
+                                                        onClick={() => setSortConfig(prev => ({ key: 'amount', direction: prev.key === 'amount' && prev.direction === 'desc' ? 'asc' : 'desc' }))}
+                                                        className="justify-between h-8 text-xs"
+                                                    >
+                                                        <span>Amount</span>
+                                                        {sortConfig.key === 'amount' && <ArrowUpDown className="w-3 h-3" />}
+                                                    </Button>
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
-                                </div>
-                            </PopoverContent>
-                        </Popover>
+                                    </PopoverContent>
+                                </Popover>
+                            </>
+                        )}
                     </div>
                 }
             />
@@ -170,7 +233,13 @@ export function HomeClient({ initialLogs, categories }: HomeClientProps) {
             {/* List/Gallery Content */}
             <div className="flex-1 overflow-y-auto w-full">
                 {viewMode === 'list' ? (
-                    <LogListView logs={filteredLogs} categoryMap={categoryMap} />
+                    <LogListView
+                        logs={filteredLogs}
+                        categoryMap={categoryMap}
+                        isSelectionMode={isSelectionMode}
+                        selectedIds={selectedIds}
+                        onToggleSelection={toggleItemSelection}
+                    />
                 ) : (
                     <GalleryView logs={filteredLogs} categoryMap={categoryMap} />
                 )}

@@ -6,7 +6,7 @@ import { Log, Category } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from 'recharts';
 import { format, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
-import { TrendingUp, FileText, DollarSign, Activity } from 'lucide-react';
+import { FileText, DollarSign } from 'lucide-react';
 
 interface StatsClientProps {
     logs: Log[];
@@ -106,7 +106,7 @@ export function StatsClient({ logs, categories }: StatsClientProps) {
                                         ))}
                                     </Pie>
                                     <RechartsTooltip
-                                        formatter={(value: any) => [value, 'Logs']}
+                                        formatter={(value: any) => [value, 'Logs']} // eslint-disable-line @typescript-eslint/no-explicit-any
                                         contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
                                     />
                                     <Legend iconType="circle" layout="horizontal" verticalAlign="bottom" align="center" />

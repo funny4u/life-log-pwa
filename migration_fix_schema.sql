@@ -1,0 +1,5 @@
+-- Add missing columns to logs table
+ALTER TABLE logs ADD COLUMN IF NOT EXISTS start_time TEXT;
+ALTER TABLE logs ADD COLUMN IF NOT EXISTS end_time TEXT;
+ALTER TABLE logs ADD COLUMN IF NOT EXISTS emoji TEXT DEFAULT '📅';
+ALTER TABLE logs ADD COLUMN IF NOT EXISTS custom_data JSONB DEFAULT '{}'::JSONB;

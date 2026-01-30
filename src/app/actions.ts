@@ -160,8 +160,8 @@ export async function createLog(log: Omit<Log, 'id' | 'created_at'>) {
     const supabase = createClient();
 
     // TEMPORARY FIX: Remove emoji to bypass schema error
-    const { emoji, ...safeLog } = log;
-    const { error } = await supabase.from('logs').insert(safeLog);
+    // const { emoji: _emoji, ...safeLog } = log;
+    const { error } = await supabase.from('logs').insert(log);
 
     if (error) {
         console.error('Error creating log:', error);
@@ -178,10 +178,10 @@ export async function updateLog(id: string, data: Partial<Omit<Log, 'id' | 'crea
     const supabase = await createClient();
 
     // TEMPORARY FIX: Remove emoji to bypass schema error
-    const { emoji, ...safeData } = data;
+    // const { emoji: _emoji, ...safeData } = data;
     const { error } = await supabase
         .from('logs')
-        .update(safeData)
+        .update(data)
         .eq('id', id);
 
     if (error) {
@@ -206,6 +206,25 @@ export async function deleteLog(id: string) {
     if (error) {
         console.error('Error deleting log:', error);
         throw new Error('Failed to delete log');
+    }
+
+    revalidatePath('/');
+    revalidatePath('/calendar');
+    revalidatePath('/stats');
+}
+
+// Bulk delete logs
+export async function bulkDeleteLogs(ids: string[]) {
+    const supabase = await createClient();
+
+    const { error } = await supabase
+        .from('logs')
+        .delete()
+        .in('id', ids);
+
+    if (error) {
+        console.error('Error deleting logs:', error);
+        throw new Error('Failed to delete logs');
     }
 
     revalidatePath('/');

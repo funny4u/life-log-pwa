@@ -10,7 +10,7 @@ import { Sidebar } from './Sidebar';
 import { SearchOverlay } from './SearchOverlay';
 
 function ClientLayoutContent({ children }: { children: React.ReactNode }) {
-    const { isDrawerOpen, closeDrawer, openDrawer } = useLogContext();
+    const { isDrawerOpen, closeDrawer } = useLogContext();
 
     return (
         <div className="flex flex-col h-full w-full bg-background relative">
