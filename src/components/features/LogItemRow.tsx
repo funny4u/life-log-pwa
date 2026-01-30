@@ -3,7 +3,6 @@
 import React from 'react';
 import { Log, Category } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useLogContext } from '@/components/providers/LogProvider';
 
@@ -69,7 +68,14 @@ export function LogItemRow({ log, categoryDef, isSelectionMode, isSelected, onTo
             <div className="flex-1 min-w-0">
                 <div className="flex justify-between items-start">
                     <p className="font-medium truncate pr-2 leading-tight">{log.title}</p>
-                    {log.amount && <span className="font-semibold text-primary whitespace-nowrap text-sm">${log.amount}</span>}
+                    {log.amount && (
+                        <span className={cn(
+                            "font-semibold whitespace-nowrap text-sm",
+                            log.amount > 0 ? "text-blue-600" : log.amount < 0 ? "text-red-600" : "text-primary"
+                        )}>
+                            {log.amount > 0 ? `+${log.amount}` : log.amount}
+                        </span>
+                    )}
                 </div>
                 <div className="flex flex-wrap gap-2 items-center mt-1">
                     <span className="text-[10px] uppercase font-medium tracking-wide opacity-70" style={{ color: color }}>

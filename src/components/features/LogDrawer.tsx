@@ -154,9 +154,8 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
                 });
             }
 
-            // Instagram / Share Logic
-            const instaField = customFields.find(f => f.label.toLowerCase() === 'instagram' && f.type === 'boolean');
-            const shouldShare = instaField && customData[instaField.key_name];
+            // Share Logic
+            const shouldShare = customData['share'] === true;
 
             if (shouldShare && typeof navigator !== 'undefined' && navigator.share) {
                 try {
@@ -275,12 +274,12 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
 
                         return orderedIds.map(fieldId => {
                             // Standard Fields
-                            if (fieldId === 'start_time') {
+                            if (fieldId === 'time') {
                                 return (
-                                    <div key="start_time" className="grid gap-2">
-                                        <Label htmlFor="start-time">Start Time</Label>
+                                    <div key="time" className="grid gap-2">
+                                        <Label htmlFor="time">Time</Label>
                                         <Input
-                                            id="start-time"
+                                            id="time"
                                             type="time"
                                             value={startTime}
                                             onChange={(e) => setStartTime(e.target.value)}
@@ -288,15 +287,14 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
                                     </div>
                                 );
                             }
-                            if (fieldId === 'end_time') {
+                            if (fieldId === 'share') {
                                 return (
-                                    <div key="end_time" className="grid gap-2">
-                                        <Label htmlFor="end-time">End Time</Label>
-                                        <Input
-                                            id="end-time"
-                                            type="time"
-                                            value={endTime}
-                                            onChange={(e) => setEndTime(e.target.value)}
+                                    <div key="share" className="flex items-center justify-between py-2 border rounded-md px-3 bg-muted/5">
+                                        <Label htmlFor="share" className="flex-1 font-medium">Share after saving</Label>
+                                        <Switch
+                                            id="share"
+                                            checked={!!customData['share']}
+                                            onCheckedChange={(checked) => setCustomData({ ...customData, share: checked })}
                                         />
                                     </div>
                                 );

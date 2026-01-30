@@ -38,11 +38,11 @@ import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 
 const STANDARD_FIELDS = [
-    { id: 'start_time', label: 'Start Time', icon: '⏰' },
-    { id: 'end_time', label: 'End Time', icon: '🏁' },
+    { id: 'time', label: 'Time', icon: '⏰' },
     { id: 'amount', label: 'Amount ($)', icon: '💰' },
     { id: 'memo', label: 'Memo', icon: '📝' },
     { id: 'image_url', label: 'Image', icon: '📷' },
+    { id: 'share', label: 'Share', icon: '📤' },
 ];
 
 const PRESET_COLORS = [
@@ -318,8 +318,8 @@ export default function SettingsPage() {
                         <Button size="sm" onClick={() => {
                             setSheetMode('create_category');
                             setIsSheetOpen(true);
-                            // Default to common system fields (Amount, Memo, Image) excluding Time
-                            setVisibleFields(['amount', 'memo', 'image_url']);
+                            // Default to common system fields
+                            setVisibleFields(['time', 'amount', 'memo', 'image_url', 'share']);
                         }}>
                             <Plus className="w-4 h-4 mr-1" /> Add
                         </Button>
