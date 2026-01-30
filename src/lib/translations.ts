@@ -63,6 +63,7 @@ export const translations = {
         },
         stats: {
             title: 'Statistics',
+            searchPlaceholder: 'Search keywords (e.g. Costco)...',
             periods: {
                 week: 'Week',
                 month: 'Month',
@@ -190,6 +191,7 @@ export const translations = {
         },
         stats: {
             title: '통계',
+            searchPlaceholder: '키워드 검색 (예: 코스트코)...',
             periods: {
                 week: '주간',
                 month: '월간',

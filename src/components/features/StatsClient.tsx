@@ -20,9 +20,10 @@ import {
     isSameMonth,
     parseISO
 } from 'date-fns';
-import { FileText, DollarSign, TrendingUp, Filter } from 'lucide-react';
+import { FileText, DollarSign, TrendingUp, Filter, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 
 interface StatsClientProps {
     logs: Log[];
@@ -37,6 +38,7 @@ export function StatsClient({ logs, categories }: StatsClientProps) {
     const [timeRange, setTimeRange] = useState<TimeRange>('month');
     const [viewType, setViewType] = useState<ViewType>('amount');
     const [selectedCategory, setSelectedCategory] = useState<string>('all');
+    const [searchQuery, setSearchQuery] = useState('');
 
     // 1. Get filtered logs based on timeRange and selectedCategory
     const dateRange = useMemo(() => {
@@ -56,9 +58,15 @@ export function StatsClient({ logs, categories }: StatsClientProps) {
             const logDate = parseISO(log.date);
             const isInRange = isWithinInterval(logDate, dateRange);
             const isSelectedCat = selectedCategory === 'all' || log.category === selectedCategory;
-            return isInRange && isSelectedCat;
+
+            // Search filter
+            const matchesSearch = searchQuery.trim() === '' ||
+                log.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                (log.memo || '').toLowerCase().includes(searchQuery.toLowerCase());
+
+            return isInRange && isSelectedCat && matchesSearch;
         });
-    }, [logs, dateRange, selectedCategory]);
+    }, [logs, dateRange, selectedCategory, searchQuery]);
 
     // 2. Trend Data Aggregation
     const trendData = useMemo(() => {
@@ -139,6 +147,16 @@ export function StatsClient({ logs, categories }: StatsClientProps) {
                                 {t(`stats.periods.${r}` as any)}
                             </button>
                         ))}
+                    </div>
+
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                            placeholder={t('stats.searchPlaceholder')}
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="pl-9 h-10 bg-background/50 border-muted-foreground/20 focus:bg-background transition-colors"
+                        />
                     </div>
 
                     <div className="flex gap-2">

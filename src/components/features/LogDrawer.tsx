@@ -202,12 +202,12 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent side="bottom" className="h-[90vh] sm:max-w-md rounded-t-[10px] pb-safe">
+            <SheetContent side="bottom" className="h-[90vh] sm:max-w-md rounded-t-[10px] pb-safe overflow-hidden">
                 <SheetHeader className="mb-2 text-left">
                     <SheetTitle>{selectedLog ? t('actions.editLog') : t('actions.newLog')}</SheetTitle>
                 </SheetHeader>
 
-                <div className="grid gap-4 py-0 pt-2 overflow-y-auto max-h-[calc(100%-80px)] px-1">
+                <div className="flex-1 grid gap-4 py-0 pt-2 overflow-y-auto px-1 pb-24" style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}>
                     <div className="grid gap-2">
                         <Label htmlFor="title">{t('fields.title')}</Label>
                         <Input
