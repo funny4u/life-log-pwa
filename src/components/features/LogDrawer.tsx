@@ -374,6 +374,14 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
                                                 onChange={e => setCustomData({ ...customData, [field.key_name]: e.target.value })}
                                             />
                                         )}
+                                        {field.type === 'date' && (
+                                            <Input
+                                                id={field.key_name}
+                                                type="date"
+                                                value={customData[field.key_name] || ''}
+                                                onChange={e => setCustomData({ ...customData, [field.key_name]: e.target.value })}
+                                            />
+                                        )}
                                         {field.type === 'boolean' && (
                                             <div className="flex items-center justify-between py-2 border rounded-md px-3 bg-muted/5">
                                                 <Label htmlFor={field.key_name} className="flex-1 font-medium">{field.label}</Label>
