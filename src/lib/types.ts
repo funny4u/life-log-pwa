@@ -40,4 +40,5 @@ export interface FieldDefinition {
     options?: string[] | null;
     is_active: boolean;
     sort_order: number;
+    enable_notification?: boolean;
 }

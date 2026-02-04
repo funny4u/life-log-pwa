@@ -59,10 +59,20 @@ export function StatsClient({ logs, categories }: StatsClientProps) {
             const isInRange = isWithinInterval(logDate, dateRange);
             const isSelectedCat = selectedCategory === 'all' || log.category === selectedCategory;
 
-            // Search filter
-            const matchesSearch = searchQuery.trim() === '' ||
+
+            // Search filter - includes title, memo, and custom field values
+            let matchesSearch = searchQuery.trim() === '' ||
                 log.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 (log.memo || '').toLowerCase().includes(searchQuery.toLowerCase());
+
+            // Also search through custom field values
+            if (!matchesSearch && log.custom_data && searchQuery.trim() !== '') {
+                const customValues = Object.values(log.custom_data);
+                matchesSearch = customValues.some(value => {
+                    if (value === null || value === undefined) return false;
+                    return String(value).toLowerCase().includes(searchQuery.toLowerCase());
+                });
+            }
 
             return isInRange && isSelectedCat && matchesSearch;
         });

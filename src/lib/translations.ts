@@ -49,6 +49,8 @@ export const translations = {
                 type: 'Data Type',
                 placeholder: 'e.g. Distance (km)',
                 create: 'Create Field',
+                edit: 'Edit Field',
+                update: 'Update Field',
                 noActive: 'No active fields. Add from below.',
             },
             appearance: {
@@ -177,6 +179,8 @@ export const translations = {
                 type: '데이터 타입',
                 placeholder: '예: 거리 (km)',
                 create: '필드 생성',
+                edit: '필드 수정',
+                update: '필드 업데이트',
                 noActive: '활성 필드가 없습니다. 아래에서 추가하세요.',
             },
             appearance: {

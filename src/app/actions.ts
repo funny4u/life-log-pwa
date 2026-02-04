@@ -84,6 +84,8 @@ import { revalidatePath } from 'next/cache';
 
 // --- Field Definitions ---
 
+const NOTIFICATION_OPTION = 'ENABLE_NOTIFICATION';
+
 export async function getFieldDefinitions() {
     const supabase = await createClient();
     const { data, error } = await supabase
@@ -92,12 +94,16 @@ export async function getFieldDefinitions() {
         .order('sort_order', { ascending: true });
 
     if (error) {
-        // If table doesn't exist yet, return empty array to prevent crash
         if (error.code === '42P01') return [];
         console.error('Error fetching fields:', error);
         return [];
     }
-    return data as FieldDefinition[];
+
+    // Map existing DB options to include virtual property
+    return (data || []).map((field: any) => ({
+        ...field,
+        enable_notification: Array.isArray(field.options) && field.options.includes(NOTIFICATION_OPTION)
+    })) as FieldDefinition[];
 }
 
 export async function createFieldDefinition(data: Omit<FieldDefinition, 'id' | 'created_at' | 'sort_order'>) {
@@ -111,8 +117,57 @@ export async function createFieldDefinition(data: Omit<FieldDefinition, 'id' | '
 
     const nextOrder = (maxOrderData?.[0]?.sort_order ?? 0) + 1;
 
-    const { error } = await supabase.from('field_definitions').insert({ ...data, sort_order: nextOrder });
+    // Handle virtual enable_notification property
+    const { enable_notification, options, ...rest } = data;
+    let finalOptions = options;
+    if (enable_notification) {
+        finalOptions = Array.isArray(options) ? [...options, NOTIFICATION_OPTION] : [NOTIFICATION_OPTION];
+    }
+
+    const { error } = await supabase.from('field_definitions').insert({
+        ...rest,
+        options: finalOptions,
+        sort_order: nextOrder
+    });
+
     if (error) throw new Error('Failed to create field');
+    revalidatePath('/settings');
+}
+
+
+export async function updateFieldDefinition(id: string, data: Partial<Pick<FieldDefinition, 'label' | 'type' | 'enable_notification'>>) {
+    const supabase = await createClient();
+
+    // Check if we are updating notification pref
+    const { enable_notification, ...rest } = data;
+
+    if (enable_notification !== undefined) {
+        // We need to fetch current options first to preserve others if any (though unlikely for Time/Date)
+        const { data: current } = await supabase.from('field_definitions').select('options').eq('id', id).single();
+        let currentOptions: string[] = Array.isArray(current?.options) ? current.options : [];
+
+        // Remove existing flag
+        currentOptions = currentOptions.filter(o => o !== NOTIFICATION_OPTION);
+
+        // Add if enabled
+        if (enable_notification) {
+            currentOptions.push(NOTIFICATION_OPTION);
+        }
+
+        const { error } = await supabase
+            .from('field_definitions')
+            .update({ ...rest, options: currentOptions })
+            .eq('id', id);
+
+        if (error) throw new Error('Failed to update field');
+    } else {
+        const { error } = await supabase
+            .from('field_definitions')
+            .update(rest)
+            .eq('id', id);
+        if (error) throw new Error('Failed to update field');
+    }
+
     revalidatePath('/settings');
 }
 

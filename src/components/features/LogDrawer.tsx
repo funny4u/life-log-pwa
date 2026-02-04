@@ -345,7 +345,8 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
                             }
 
                             // Custom Fields
-                            const field = customFields.find(f => f.key_name === fieldId);
+                            // Prioritize finding by ID (new way), then key_name (legacy)
+                            const field = customFields.find(f => f.id === fieldId || f.key_name === fieldId);
                             if (field && field.is_active) {
                                 return (
                                     <div key={field.id} className="grid gap-2">

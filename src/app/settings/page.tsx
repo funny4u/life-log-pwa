@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { TopBar } from '@/components/layout/TopBar';
 import { FieldDefinition, FieldType, Category } from '@/lib/types';
-import { getFieldDefinitions, createFieldDefinition, deleteFieldDefinition, getCategories, createCategory, updateCategory, deleteCategory, setDefaultCategory } from '@/app/actions';
+import { getFieldDefinitions, createFieldDefinition, updateFieldDefinition, deleteFieldDefinition, getCategories, createCategory, updateCategory, deleteCategory, setDefaultCategory } from '@/app/actions';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -124,8 +124,9 @@ export default function SettingsPage() {
 
     // Sheet State
     const [isSheetOpen, setIsSheetOpen] = useState(false);
-    const [sheetMode, setSheetMode] = useState<'create_category' | 'edit_category' | 'create_field'>('create_category');
+    const [sheetMode, setSheetMode] = useState<'create_category' | 'edit_category' | 'create_field' | 'edit_field'>('create_category');
     const [editingId, setEditingId] = useState<string | null>(null);
+    const [editingFieldId, setEditingFieldId] = useState<string | null>(null);
     const [openTypeSelect, setOpenTypeSelect] = useState(false);
 
     // Confirm Delete State
@@ -137,6 +138,7 @@ export default function SettingsPage() {
     const [catName, setCatName] = useState('');
     const [catColor, setCatColor] = useState('#EF4444');
     const [catIcon, setCatIcon] = useState('🏷️');
+    const [isNotificationEnabled, setIsNotificationEnabled] = useState(false);
 
     const [isSaving, setIsSaving] = useState(false);
 
@@ -153,10 +155,12 @@ export default function SettingsPage() {
             setTimeout(() => {
                 setNewLabel('');
                 setNewType('text');
+                setEditingFieldId(null);
                 setCatName('');
                 setCatColor('#EF4444');
                 setCatIcon('🏷️');
                 setEditingId(null);
+                setIsNotificationEnabled(false);
                 setVisibleFields(STANDARD_FIELDS.map(f => f.id)); // Default all standard enabled
             }, 300);
         }
@@ -185,17 +189,80 @@ export default function SettingsPage() {
         if (!newLabel) return;
         setIsSaving(true);
         try {
-            const key_name = newLabel.toLowerCase().replace(/[^a-z0-9]/g, '_');
+            // Robust key generation
+            let key_name = newLabel.trim().toLowerCase()
+                .replace(/[^a-z0-9]+/g, '_') // Replace sequences of non-alphanumeric with single underscore
+                .replace(/^_+|_+$/g, '');   // Trim leading/trailing underscores
+
+            // Fallback if empty or too short default to a random uuid-like string
+            if (!key_name || key_name.length < 2) {
+                key_name = `field_${crypto.randomUUID().split('-')[0]}`;
+            }
+
+            // Ensure uniqueness against existing fields
+            const existingKeys = new Set(fields.map(f => f.key_name));
+            let finalKey = key_name;
+            let counter = 1;
+            while (existingKeys.has(finalKey)) {
+                finalKey = `${key_name}_${counter}`;
+                counter++;
+            }
+            key_name = finalKey;
+
+            // Only create the field definition on server
+            // Note: We don't get the ID back from createFieldDefinition currently without refactoring actions,
+            // but we can reload the data and find it.
+            // Ideally core action should return the new object.
+            // For now, I'll rely on reloading data.
+
             await createFieldDefinition({
                 label: newLabel,
                 key_name,
                 type: newType,
                 is_active: true,
-                options: null
+                options: null,
+                enable_notification: isNotificationEnabled
+            });
+
+            // Reload to get the new field including its ID
+            const [newFieldsData] = await Promise.all([
+                getFieldDefinitions(),
+                // We don't strictly need to reload categories here usually, but safe to keep sync
+                getCategories()
+            ]);
+            setFields(newFieldsData);
+
+            // Find the newly created field to get its ID
+            // We match by key_name since we just established it's unique
+            const newField = newFieldsData.find(f => f.key_name === key_name);
+
+            if (newField) {
+                // Automatically enable the new field for the current category being edited
+                setVisibleFields(prev => {
+                    // Add the ID, not the key_name (unless it's a standard field, but this is custom)
+                    if (prev.includes(newField.id)) return prev;
+                    return [...prev, newField.id];
+                });
+            }
+
+            setSheetMode('edit_category'); // Go back to category edit
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleUpdateField = async () => {
+        if (!newLabel || !editingFieldId) return;
+        setIsSaving(true);
+        try {
+            await updateFieldDefinition(editingFieldId, {
+                label: newLabel,
+                type: newType,
+                enable_notification: isNotificationEnabled
             });
             await loadData();
-            // Automatically enable the new field for the current category being edited
-            setVisibleFields(prev => [...prev, key_name]);
             setSheetMode('edit_category'); // Go back to category edit
         } catch (e) {
             console.error(e);
@@ -244,13 +311,17 @@ export default function SettingsPage() {
 
         // Load visible fields from settings, or default to all standard if clean
         if (cat.settings?.visible_fields) {
-            setVisibleFields(cat.settings.visible_fields);
+            // Deduplicate just in case saved data is bad
+            setVisibleFields(Array.from(new Set(cat.settings.visible_fields)));
         } else {
             // If no settings (legacy), default to all standard + all active custom
-            setVisibleFields([
+            // For legacy support, we map custom fields to their IDs if possible, or keep key_name if needed
+            // But ideally we migrate to IDs.
+            const allFields = [
                 ...STANDARD_FIELDS.map(f => f.id),
-                ...fields.filter(f => f.is_active).map(f => f.key_name)
-            ]);
+                ...fields.filter(f => f.is_active).map(f => f.id) // Prefer ID for custom fields
+            ];
+            setVisibleFields(Array.from(new Set(allFields)));
         }
 
         setSheetMode('edit_category');
@@ -406,10 +477,10 @@ export default function SettingsPage() {
             {/* Create/Edit Sheet */}
             <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
                 <SheetContent side="bottom" className="rounded-t-[20px] pb-safe pt-6 max-h-[95vh] overflow-y-auto w-full max-w-[100vw] overflow-x-hidden">
-                    {sheetMode === 'create_field' ? (
+                    {(sheetMode === 'create_field' || sheetMode === 'edit_field') ? (
                         <div className="grid gap-6">
                             <SheetHeader className="text-left">
-                                <SheetTitle>{t('settings.fields.newCustom')}</SheetTitle>
+                                <SheetTitle>{sheetMode === 'edit_field' ? t('settings.fields.edit') : t('settings.fields.newCustom')}</SheetTitle>
                                 <SheetDescription>{t('settings.fields.description')}</SheetDescription>
                             </SheetHeader>
                             <div className="space-y-3">
@@ -481,9 +552,43 @@ export default function SettingsPage() {
                                     </PopoverContent>
                                 </Popover>
                             </div>
+
+                            {(newType === 'time' || newType === 'date') && (
+                                <div className="flex items-center justify-between p-4 border rounded-lg bg-card/50">
+                                    <div className="space-y-0.5">
+                                        <Label className="text-base">Enable Notification</Label>
+                                        <p className="text-sm text-muted-foreground">
+                                            Receive an alert at the specified {newType}.
+                                        </p>
+                                    </div>
+                                    <Switch
+                                        checked={isNotificationEnabled}
+                                        onCheckedChange={setIsNotificationEnabled}
+                                    />
+                                </div>
+                            )}
+
+                            {sheetMode === 'edit_field' && (() => {
+                                const original = fields.find(f => f.id === editingFieldId);
+                                if (original && original.type !== newType) {
+                                    return (
+                                        <div className="p-3 bg-yellow-50 text-yellow-800 rounded-lg text-sm border border-yellow-200">
+                                            <strong>Warning:</strong> Changing field type from <b>{FIELD_TYPES.find(f => f.value === original.type)?.label}</b> to <b>{FIELD_TYPES.find(f => f.value === newType)?.label}</b> may cause existing data to display incorrectly.
+                                        </div>
+                                    );
+                                }
+                                return null;
+                            })()}
+
                             <div className="flex gap-3">
                                 <Button variant="outline" className="flex-1" onClick={() => setSheetMode('edit_category')}>{t('actions.back')}</Button>
-                                <Button className="flex-1" onClick={handleCreateField} disabled={isSaving}>{t('settings.fields.create')}</Button>
+                                <Button
+                                    className="flex-1"
+                                    onClick={sheetMode === 'edit_field' ? handleUpdateField : handleCreateField}
+                                    disabled={isSaving}
+                                >
+                                    {sheetMode === 'edit_field' ? t('settings.fields.update') : t('settings.fields.create')}
+                                </Button>
                             </div>
                         </div>
                     ) : (
@@ -579,12 +684,16 @@ export default function SettingsPage() {
                                                 >
                                                     {visibleFields.map((fieldId) => {
                                                         const standardField = translatedStandardFields.find(f => f.id === fieldId);
-                                                        const customField = fields.find(f => f.key_name === fieldId);
+                                                        // Check by ID first, then key_name for legacy
+                                                        const customField = fields.find(f => f.id === fieldId || f.key_name === fieldId);
                                                         const field = standardField || customField;
 
                                                         if (!field) return null;
 
                                                         const isCustom = !!customField;
+                                                        // Use the correct ID for the row (preserve what's in visibleFields)
+                                                        const rowId = fieldId;
+
                                                         const fieldProp = {
                                                             label: standardField ? standardField.label : customField?.label,
                                                             icon: standardField ? standardField.icon : '📋',
@@ -593,8 +702,8 @@ export default function SettingsPage() {
 
                                                         return (
                                                             <SortableFieldRow
-                                                                key={fieldId}
-                                                                id={fieldId}
+                                                                key={rowId}
+                                                                id={rowId}
                                                                 field={fieldProp}
                                                                 isCustom={isCustom}
                                                                 toggleVisible={toggleVisible}
@@ -616,15 +725,15 @@ export default function SettingsPage() {
                                     <div>
                                         <Label className="text-sm font-medium mb-2 block">{t('settings.fields.available')}</Label>
                                         <div className="flex flex-col gap-2 border rounded-xl p-2 bg-muted/5 w-full">
-                                            {[...translatedStandardFields, ...fields.map(f => ({ ...f, id: f.key_name, originalId: f.id, icon: '📋' }))]
-                                                .filter(f => !visibleFields.includes(f.id))
+                                            {[...translatedStandardFields, ...fields.map(f => ({ ...f, id: f.id, originalId: f.id, icon: '📋' }))]
+                                                .filter(f => !visibleFields.includes(f.id) && !visibleFields.includes((f as any).key_name))
                                                 .map(field => {
                                                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                     const customField = field as any;
                                                     const isCustom = !!customField.originalId;
 
                                                     return (
-                                                        <div key={field.id} className="flex items-center gap-3 p-2 bg-card/50 border border-dashed rounded-lg">
+                                                        <div key={isCustom ? customField.originalId : field.id} className="flex items-center gap-3 p-2 bg-card/50 border border-dashed rounded-lg">
                                                             <div className="flex items-center gap-3 flex-1 min-w-0 overflow-hidden opacity-70">
                                                                 <span className="text-xl flex-shrink-0">{field.icon}</span>
                                                                 <span className="text-base font-medium truncate">{field.label}</span>
@@ -636,21 +745,39 @@ export default function SettingsPage() {
                                                             </div>
                                                             <div className="flex items-center gap-2">
                                                                 {isCustom && (
-                                                                    <Button
-                                                                        variant="ghost"
-                                                                        size="icon"
-                                                                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                            if (customField.originalId) setDeleteConfirm({ type: 'field', id: customField.originalId });
-                                                                        }}
-                                                                    >
-                                                                        <Trash2 className="w-4 h-4" />
-                                                                    </Button>
+                                                                    <>
+                                                                        <Button
+                                                                            variant="ghost"
+                                                                            size="icon"
+                                                                            className="h-8 w-8 text-muted-foreground hover:text-primary"
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                if (customField.originalId) {
+                                                                                    setEditingFieldId(customField.originalId);
+                                                                                    setNewLabel(customField.label);
+                                                                                    setNewType(customField.type);
+                                                                                    setSheetMode('edit_field');
+                                                                                }
+                                                                            }}
+                                                                        >
+                                                                            <Pencil className="w-4 h-4" />
+                                                                        </Button>
+                                                                        <Button
+                                                                            variant="ghost"
+                                                                            size="icon"
+                                                                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                if (customField.originalId) setDeleteConfirm({ type: 'field', id: customField.originalId });
+                                                                            }}
+                                                                        >
+                                                                            <Trash2 className="w-4 h-4" />
+                                                                        </Button>
+                                                                    </>
                                                                 )}
                                                                 <Switch
                                                                     checked={false}
-                                                                    onCheckedChange={() => toggleVisible(field.id)}
+                                                                    onCheckedChange={() => toggleVisible(field.id)} // id is now robust (UUID for custom, string for standard)
                                                                     className="flex-shrink-0"
                                                                 />
                                                             </div>
@@ -691,6 +818,6 @@ export default function SettingsPage() {
                     </div>
                 </SheetContent>
             </Sheet>
-        </div>
+        </div >
     );
 }

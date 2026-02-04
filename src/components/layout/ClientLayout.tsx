@@ -7,12 +7,14 @@ import { LogDrawer } from '../features/LogDrawer';
 import { LogProvider, useLogContext } from '@/components/providers/LogProvider';
 import { LayoutProvider } from '@/components/providers/LayoutProvider';
 import { Sidebar } from './Sidebar';
+import { NotificationManager } from '../features/NotificationManager';
 
 function ClientLayoutContent({ children }: { children: React.ReactNode }) {
     const { isDrawerOpen, closeDrawer } = useLogContext();
 
     return (
         <div className="flex flex-col h-full w-full bg-background relative">
+            <NotificationManager />
             <main className="flex-1 w-full h-full overflow-y-auto overflow-x-hidden pb-24 scroll-smooth">
                 {/* pb-24 ensures content isn't hidden behind BottomNav */}
                 {children}
