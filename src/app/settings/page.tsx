@@ -476,328 +476,330 @@ export default function SettingsPage() {
 
             {/* Create/Edit Sheet */}
             <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-                <SheetContent side="bottom" className="rounded-t-[20px] pb-safe pt-6 max-h-[95vh] overflow-y-auto w-full max-w-[100vw] overflow-x-hidden">
-                    {(sheetMode === 'create_field' || sheetMode === 'edit_field') ? (
-                        <div className="grid gap-6">
-                            <SheetHeader className="text-left">
-                                <SheetTitle>{sheetMode === 'edit_field' ? t('settings.fields.edit') : t('settings.fields.newCustom')}</SheetTitle>
-                                <SheetDescription>{t('settings.fields.description')}</SheetDescription>
-                            </SheetHeader>
-                            <div className="space-y-3">
-                                <Label>{t('settings.fields.label')}</Label>
-                                <Input
-                                    placeholder={t('settings.fields.placeholder')}
-                                    value={newLabel}
-                                    onChange={(e) => setNewLabel(e.target.value)}
-                                    className="text-lg"
-                                    autoFocus
-                                />
-                            </div>
-                            <div className="space-y-3">
-                                <Label>{t('settings.fields.type')}</Label>
-                                <Popover open={openTypeSelect} onOpenChange={setOpenTypeSelect}>
-                                    <PopoverTrigger asChild>
-                                        <Button
-                                            variant="outline"
-                                            role="combobox"
-                                            aria-expanded={openTypeSelect}
-                                            className="w-full justify-between h-14 px-4 text-base font-normal bg-background"
-                                        >
-                                            <div className="flex items-center gap-3">
-                                                {newType ? (
-                                                    <>
-                                                        {(() => {
-                                                            const type = FIELD_TYPES.find(f => f.value === newType);
-                                                            const Icon = type?.icon || Type;
-                                                            return <Icon className="w-5 h-5 text-muted-foreground" />;
-                                                        })()}
-                                                        <span>{FIELD_TYPES.find(f => f.value === newType)?.label}</span>
-                                                    </>
-                                                ) : "Select field type..."}
-                                            </div>
-                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start" side="bottom">
-                                        <Command>
-                                            <CommandInput placeholder="Find a field type..." />
-                                            <CommandList>
-                                                <CommandEmpty>No field type found.</CommandEmpty>
-                                                <CommandGroup>
-                                                    {FIELD_TYPES.map((type) => (
-                                                        <CommandItem
-                                                            key={type.value}
-                                                            value={type.label} // Search by label
-                                                            onSelect={() => {
-                                                                setNewType(type.value as FieldType);
-                                                                setOpenTypeSelect(false);
-                                                            }}
-                                                            className="flex items-center gap-3 py-3 px-4 cursor-pointer"
-                                                        >
-                                                            <type.icon className="w-5 h-5 text-muted-foreground" />
-                                                            <div className="flex flex-col">
-                                                                <span className="font-medium text-base">{type.label}</span>
-                                                            </div>
-                                                            <Check
-                                                                className={cn(
-                                                                    "ml-auto h-4 w-4",
-                                                                    newType === type.value ? "opacity-100" : "opacity-0"
-                                                                )}
-                                                            />
-                                                        </CommandItem>
-                                                    ))}
-                                                </CommandGroup>
-                                            </CommandList>
-                                        </Command>
-                                    </PopoverContent>
-                                </Popover>
-                            </div>
-
-                            {(newType === 'time' || newType === 'date') && (
-                                <div className="flex items-center justify-between p-4 border rounded-lg bg-card/50">
-                                    <div className="space-y-0.5">
-                                        <Label className="text-base">Enable Notification</Label>
-                                        <p className="text-sm text-muted-foreground">
-                                            Receive an alert at the specified {newType}.
-                                        </p>
-                                    </div>
-                                    <Switch
-                                        checked={isNotificationEnabled}
-                                        onCheckedChange={setIsNotificationEnabled}
+                <SheetContent side="bottom" className="rounded-t-[20px] pb-safe pt-6 h-[90vh] w-full max-w-[100vw] flex flex-col gap-0 overflow-hidden">
+                    <div className="flex-1 overflow-y-auto px-1 pb-10" style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}>
+                        {(sheetMode === 'create_field' || sheetMode === 'edit_field') ? (
+                            <div className="grid gap-6">
+                                <SheetHeader className="text-left">
+                                    <SheetTitle>{sheetMode === 'edit_field' ? t('settings.fields.edit') : t('settings.fields.newCustom')}</SheetTitle>
+                                    <SheetDescription>{t('settings.fields.description')}</SheetDescription>
+                                </SheetHeader>
+                                <div className="space-y-3">
+                                    <Label>{t('settings.fields.label')}</Label>
+                                    <Input
+                                        placeholder={t('settings.fields.placeholder')}
+                                        value={newLabel}
+                                        onChange={(e) => setNewLabel(e.target.value)}
+                                        className="text-lg"
+                                        autoFocus
                                     />
                                 </div>
-                            )}
-
-                            {sheetMode === 'edit_field' && (() => {
-                                const original = fields.find(f => f.id === editingFieldId);
-                                if (original && original.type !== newType) {
-                                    return (
-                                        <div className="p-3 bg-yellow-50 text-yellow-800 rounded-lg text-sm border border-yellow-200">
-                                            <strong>Warning:</strong> Changing field type from <b>{FIELD_TYPES.find(f => f.value === original.type)?.label}</b> to <b>{FIELD_TYPES.find(f => f.value === newType)?.label}</b> may cause existing data to display incorrectly.
-                                        </div>
-                                    );
-                                }
-                                return null;
-                            })()}
-
-                            <div className="flex gap-3">
-                                <Button variant="outline" className="flex-1" onClick={() => setSheetMode('edit_category')}>{t('actions.back')}</Button>
-                                <Button
-                                    className="flex-1"
-                                    onClick={sheetMode === 'edit_field' ? handleUpdateField : handleCreateField}
-                                    disabled={isSaving}
-                                >
-                                    {sheetMode === 'edit_field' ? t('settings.fields.update') : t('settings.fields.create')}
-                                </Button>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="flex flex-col gap-6 w-full overflow-x-hidden px-4">
-                            <SheetHeader className="text-left px-0">
-                                <SheetTitle>
-                                    {sheetMode === 'create_category' ? t('settings.categories.new') : t('settings.categories.edit')}
-                                </SheetTitle>
-                                <SheetDescription>
-                                    {t('settings.categories.description')}
-                                </SheetDescription>
-                            </SheetHeader>
-
-                            {/* Basic Info */}
-                            <div className="space-y-3">
-                                <Label>{t('settings.appearance.nameAndIcon')}</Label>
-                                <div className="flex gap-3">
-                                    <Popover>
+                                <div className="space-y-3">
+                                    <Label>{t('settings.fields.type')}</Label>
+                                    <Popover open={openTypeSelect} onOpenChange={setOpenTypeSelect}>
                                         <PopoverTrigger asChild>
-                                            <button className="w-14 h-14 flex-shrink-0 rounded-xl border flex items-center justify-center text-3xl bg-muted/30 hover:bg-muted/50 transition-colors">
-                                                {catIcon}
-                                            </button>
+                                            <Button
+                                                variant="outline"
+                                                role="combobox"
+                                                aria-expanded={openTypeSelect}
+                                                className="w-full justify-between h-14 px-4 text-base font-normal bg-background"
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    {newType ? (
+                                                        <>
+                                                            {(() => {
+                                                                const type = FIELD_TYPES.find(f => f.value === newType);
+                                                                const Icon = type?.icon || Type;
+                                                                return <Icon className="w-5 h-5 text-muted-foreground" />;
+                                                            })()}
+                                                            <span>{FIELD_TYPES.find(f => f.value === newType)?.label}</span>
+                                                        </>
+                                                    ) : "Select field type..."}
+                                                </div>
+                                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                            </Button>
                                         </PopoverTrigger>
-                                        <PopoverContent className="p-0 border-none shadow-none w-auto" align="start">
-                                            <EmojiPicker
-                                                onEmojiClick={(data) => setCatIcon(data.emoji)}
-                                                theme={Theme.AUTO}
-                                                lazyLoadEmojis={true}
-                                                width={320}
-                                                height={400}
-                                                previewConfig={{ showPreview: false }}
-                                            />
+                                        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start" side="bottom">
+                                            <Command>
+                                                <CommandInput placeholder="Find a field type..." />
+                                                <CommandList>
+                                                    <CommandEmpty>No field type found.</CommandEmpty>
+                                                    <CommandGroup>
+                                                        {FIELD_TYPES.map((type) => (
+                                                            <CommandItem
+                                                                key={type.value}
+                                                                value={type.label} // Search by label
+                                                                onSelect={() => {
+                                                                    setNewType(type.value as FieldType);
+                                                                    setOpenTypeSelect(false);
+                                                                }}
+                                                                className="flex items-center gap-3 py-3 px-4 cursor-pointer"
+                                                            >
+                                                                <type.icon className="w-5 h-5 text-muted-foreground" />
+                                                                <div className="flex flex-col">
+                                                                    <span className="font-medium text-base">{type.label}</span>
+                                                                </div>
+                                                                <Check
+                                                                    className={cn(
+                                                                        "ml-auto h-4 w-4",
+                                                                        newType === type.value ? "opacity-100" : "opacity-0"
+                                                                    )}
+                                                                />
+                                                            </CommandItem>
+                                                        ))}
+                                                    </CommandGroup>
+                                                </CommandList>
+                                            </Command>
                                         </PopoverContent>
                                     </Popover>
-
-                                    <Input
-                                        placeholder={t('settings.categories.namePlaceholder')}
-                                        value={catName}
-                                        onChange={e => setCatName(e.target.value)}
-                                        className="text-lg h-14 flex-1"
-                                    />
                                 </div>
-                            </div>
 
-                            {/* Appearance */}
-                            <div className="space-y-4 w-full">
-                                <Label>{t('settings.appearance.color')}</Label>
-                                <div className="flex flex-wrap gap-3 w-full">
-                                    {PRESET_COLORS.map(color => (
-                                        <button
-                                            key={color}
-                                            onClick={() => setCatColor(color)}
-                                            className={cn(
-                                                "w-10 h-10 rounded-full flex-shrink-0 border-2 transition-all",
-                                                catColor === color ? "border-foreground scale-110" : "border-transparent opacity-50"
-                                            )}
-                                            style={{ backgroundColor: color }}
+                                {(newType === 'time' || newType === 'date') && (
+                                    <div className="flex items-center justify-between p-4 border rounded-lg bg-card/50">
+                                        <div className="space-y-0.5">
+                                            <Label className="text-base">Enable Notification</Label>
+                                            <p className="text-sm text-muted-foreground">
+                                                Receive an alert at the specified {newType}.
+                                            </p>
+                                        </div>
+                                        <Switch
+                                            checked={isNotificationEnabled}
+                                            onCheckedChange={setIsNotificationEnabled}
                                         />
-                                    ))}
+                                    </div>
+                                )}
+
+                                {sheetMode === 'edit_field' && (() => {
+                                    const original = fields.find(f => f.id === editingFieldId);
+                                    if (original && original.type !== newType) {
+                                        return (
+                                            <div className="p-3 bg-yellow-50 text-yellow-800 rounded-lg text-sm border border-yellow-200">
+                                                <strong>Warning:</strong> Changing field type from <b>{FIELD_TYPES.find(f => f.value === original.type)?.label}</b> to <b>{FIELD_TYPES.find(f => f.value === newType)?.label}</b> may cause existing data to display incorrectly.
+                                            </div>
+                                        );
+                                    }
+                                    return null;
+                                })()}
+
+                                <div className="flex gap-3">
+                                    <Button variant="outline" className="flex-1" onClick={() => setSheetMode('edit_category')}>{t('actions.back')}</Button>
+                                    <Button
+                                        className="flex-1"
+                                        onClick={sheetMode === 'edit_field' ? handleUpdateField : handleCreateField}
+                                        disabled={isSaving}
+                                    >
+                                        {sheetMode === 'edit_field' ? t('settings.fields.update') : t('settings.fields.create')}
+                                    </Button>
                                 </div>
                             </div>
+                        ) : (
+                            <div className="flex flex-col gap-6 w-full overflow-x-hidden px-4">
+                                <SheetHeader className="text-left px-0">
+                                    <SheetTitle>
+                                        {sheetMode === 'create_category' ? t('settings.categories.new') : t('settings.categories.edit')}
+                                    </SheetTitle>
+                                    <SheetDescription>
+                                        {t('settings.categories.description')}
+                                    </SheetDescription>
+                                </SheetHeader>
 
-                            <Separator />
+                                {/* Basic Info */}
+                                <div className="space-y-3">
+                                    <Label>{t('settings.appearance.nameAndIcon')}</Label>
+                                    <div className="flex gap-3">
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <button className="w-14 h-14 flex-shrink-0 rounded-xl border flex items-center justify-center text-3xl bg-muted/30 hover:bg-muted/50 transition-colors">
+                                                    {catIcon}
+                                                </button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="p-0 border-none shadow-none w-auto" align="start">
+                                                <EmojiPicker
+                                                    onEmojiClick={(data) => setCatIcon(data.emoji)}
+                                                    theme={Theme.AUTO}
+                                                    lazyLoadEmojis={true}
+                                                    width={320}
+                                                    height={400}
+                                                    previewConfig={{ showPreview: false }}
+                                                />
+                                            </PopoverContent>
+                                        </Popover>
 
-                            {/* Log Page Configuration */}
-                            <div className="space-y-3 w-full">
-                                <div className="flex justify-between items-center">
-                                    <Label className="text-base font-semibold">{t('settings.fields.title')}</Label>
-                                    <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setSheetMode('create_field')}>
-                                        <Plus className="w-3 h-3 mr-1" /> {t('settings.fields.addCustom')}
-                                    </Button>
-                                    <span className="text-xs text-muted-foreground ml-auto pr-2">
-                                        {visibleFields.length} {language === 'ko' ? '활성' : 'active'}
-                                    </span>
+                                        <Input
+                                            placeholder={t('settings.categories.namePlaceholder')}
+                                            value={catName}
+                                            onChange={e => setCatName(e.target.value)}
+                                            className="text-lg h-14 flex-1"
+                                        />
+                                    </div>
                                 </div>
-                                <p className="text-xs text-muted-foreground">{t('settings.fields.description')}</p>
 
-                                <div className="space-y-4">
-                                    {/* Active Fields (Ordered) */}
-                                    <div>
-                                        <Label className="text-sm font-medium mb-2 block">{t('settings.fields.active')}</Label>
-                                        <div className="flex flex-col gap-2 border rounded-xl p-2 bg-muted/5 w-full">
-                                            <DndContext
-                                                sensors={sensors}
-                                                collisionDetection={closestCenter}
-                                                onDragEnd={handleDragEnd}
-                                                // Mobile drag fix
-                                                modifiers={[]}
-                                            >
-                                                <SortableContext
-                                                    items={visibleFields}
-                                                    strategy={verticalListSortingStrategy}
+                                {/* Appearance */}
+                                <div className="space-y-4 w-full">
+                                    <Label>{t('settings.appearance.color')}</Label>
+                                    <div className="flex flex-wrap gap-3 w-full">
+                                        {PRESET_COLORS.map(color => (
+                                            <button
+                                                key={color}
+                                                onClick={() => setCatColor(color)}
+                                                className={cn(
+                                                    "w-10 h-10 rounded-full flex-shrink-0 border-2 transition-all",
+                                                    catColor === color ? "border-foreground scale-110" : "border-transparent opacity-50"
+                                                )}
+                                                style={{ backgroundColor: color }}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <Separator />
+
+                                {/* Log Page Configuration */}
+                                <div className="space-y-3 w-full">
+                                    <div className="flex justify-between items-center">
+                                        <Label className="text-base font-semibold">{t('settings.fields.title')}</Label>
+                                        <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setSheetMode('create_field')}>
+                                            <Plus className="w-3 h-3 mr-1" /> {t('settings.fields.addCustom')}
+                                        </Button>
+                                        <span className="text-xs text-muted-foreground ml-auto pr-2">
+                                            {visibleFields.length} {language === 'ko' ? '활성' : 'active'}
+                                        </span>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground">{t('settings.fields.description')}</p>
+
+                                    <div className="space-y-4">
+                                        {/* Active Fields (Ordered) */}
+                                        <div>
+                                            <Label className="text-sm font-medium mb-2 block">{t('settings.fields.active')}</Label>
+                                            <div className="flex flex-col gap-2 border rounded-xl p-2 bg-muted/5 w-full">
+                                                <DndContext
+                                                    sensors={sensors}
+                                                    collisionDetection={closestCenter}
+                                                    onDragEnd={handleDragEnd}
+                                                    // Mobile drag fix
+                                                    modifiers={[]}
                                                 >
-                                                    {visibleFields.map((fieldId) => {
-                                                        const standardField = translatedStandardFields.find(f => f.id === fieldId);
-                                                        // Check by ID first, then key_name for legacy
-                                                        const customField = fields.find(f => f.id === fieldId || f.key_name === fieldId);
-                                                        const field = standardField || customField;
+                                                    <SortableContext
+                                                        items={visibleFields}
+                                                        strategy={verticalListSortingStrategy}
+                                                    >
+                                                        {visibleFields.map((fieldId) => {
+                                                            const standardField = translatedStandardFields.find(f => f.id === fieldId);
+                                                            // Check by ID first, then key_name for legacy
+                                                            const customField = fields.find(f => f.id === fieldId || f.key_name === fieldId);
+                                                            const field = standardField || customField;
 
-                                                        if (!field) return null;
+                                                            if (!field) return null;
 
-                                                        const isCustom = !!customField;
-                                                        // Use the correct ID for the row (preserve what's in visibleFields)
-                                                        const rowId = fieldId;
+                                                            const isCustom = !!customField;
+                                                            // Use the correct ID for the row (preserve what's in visibleFields)
+                                                            const rowId = fieldId;
 
-                                                        const fieldProp = {
-                                                            label: standardField ? standardField.label : customField?.label,
-                                                            icon: standardField ? standardField.icon : '📋',
-                                                            type: isCustom && customField ? customField.type : undefined
-                                                        };
+                                                            const fieldProp = {
+                                                                label: standardField ? standardField.label : customField?.label,
+                                                                icon: standardField ? standardField.icon : '📋',
+                                                                type: isCustom && customField ? customField.type : undefined
+                                                            };
+
+                                                            return (
+                                                                <SortableFieldRow
+                                                                    key={rowId}
+                                                                    id={rowId}
+                                                                    field={fieldProp}
+                                                                    isCustom={isCustom}
+                                                                    toggleVisible={toggleVisible}
+                                                                />
+                                                            );
+                                                        })}
+                                                    </SortableContext>
+                                                </DndContext>
+
+                                                {visibleFields.length === 0 && (
+                                                    <div className="text-center py-4 text-sm text-muted-foreground">
+                                                        {t('settings.fields.noActive')}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Inactive Fields */}
+                                        <div>
+                                            <Label className="text-sm font-medium mb-2 block">{t('settings.fields.available')}</Label>
+                                            <div className="flex flex-col gap-2 border rounded-xl p-2 bg-muted/5 w-full">
+                                                {[...translatedStandardFields, ...fields.map(f => ({ ...f, id: f.id, originalId: f.id, icon: '📋' }))]
+                                                    .filter(f => !visibleFields.includes(f.id) && !visibleFields.includes((f as any).key_name))
+                                                    .map(field => {
+                                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                                        const customField = field as any;
+                                                        const isCustom = !!customField.originalId;
 
                                                         return (
-                                                            <SortableFieldRow
-                                                                key={rowId}
-                                                                id={rowId}
-                                                                field={fieldProp}
-                                                                isCustom={isCustom}
-                                                                toggleVisible={toggleVisible}
-                                                            />
+                                                            <div key={isCustom ? customField.originalId : field.id} className="flex items-center gap-3 p-2 bg-card/50 border border-dashed rounded-lg">
+                                                                <div className="flex items-center gap-3 flex-1 min-w-0 overflow-hidden opacity-70">
+                                                                    <span className="text-xl flex-shrink-0">{field.icon}</span>
+                                                                    <span className="text-base font-medium truncate">{field.label}</span>
+                                                                    {isCustom ? (
+                                                                        <span className="text-[10px] uppercase bg-muted px-1 rounded text-muted-foreground flex-shrink-0">{customField.type}</span>
+                                                                    ) : (
+                                                                        <span className="text-[10px] uppercase bg-primary/5 px-1 rounded text-primary/70 flex-shrink-0 border border-primary/10 font-semibold tracking-wider">{t('fields.system')}</span>
+                                                                    )}
+                                                                </div>
+                                                                <div className="flex items-center gap-2">
+                                                                    {isCustom && (
+                                                                        <>
+                                                                            <Button
+                                                                                variant="ghost"
+                                                                                size="icon"
+                                                                                className="h-8 w-8 text-muted-foreground hover:text-primary"
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    if (customField.originalId) {
+                                                                                        setEditingFieldId(customField.originalId);
+                                                                                        setNewLabel(customField.label);
+                                                                                        setNewType(customField.type);
+                                                                                        setSheetMode('edit_field');
+                                                                                    }
+                                                                                }}
+                                                                            >
+                                                                                <Pencil className="w-4 h-4" />
+                                                                            </Button>
+                                                                            <Button
+                                                                                variant="ghost"
+                                                                                size="icon"
+                                                                                className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    if (customField.originalId) setDeleteConfirm({ type: 'field', id: customField.originalId });
+                                                                                }}
+                                                                            >
+                                                                                <Trash2 className="w-4 h-4" />
+                                                                            </Button>
+                                                                        </>
+                                                                    )}
+                                                                    <Switch
+                                                                        checked={false}
+                                                                        onCheckedChange={() => toggleVisible(field.id)} // id is now robust (UUID for custom, string for standard)
+                                                                        className="flex-shrink-0"
+                                                                    />
+                                                                </div>
+                                                            </div>
                                                         );
                                                     })}
-                                                </SortableContext>
-                                            </DndContext>
-
-                                            {visibleFields.length === 0 && (
-                                                <div className="text-center py-4 text-sm text-muted-foreground">
-                                                    {t('settings.fields.noActive')}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    {/* Inactive Fields */}
-                                    <div>
-                                        <Label className="text-sm font-medium mb-2 block">{t('settings.fields.available')}</Label>
-                                        <div className="flex flex-col gap-2 border rounded-xl p-2 bg-muted/5 w-full">
-                                            {[...translatedStandardFields, ...fields.map(f => ({ ...f, id: f.id, originalId: f.id, icon: '📋' }))]
-                                                .filter(f => !visibleFields.includes(f.id) && !visibleFields.includes((f as any).key_name))
-                                                .map(field => {
-                                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                                    const customField = field as any;
-                                                    const isCustom = !!customField.originalId;
-
-                                                    return (
-                                                        <div key={isCustom ? customField.originalId : field.id} className="flex items-center gap-3 p-2 bg-card/50 border border-dashed rounded-lg">
-                                                            <div className="flex items-center gap-3 flex-1 min-w-0 overflow-hidden opacity-70">
-                                                                <span className="text-xl flex-shrink-0">{field.icon}</span>
-                                                                <span className="text-base font-medium truncate">{field.label}</span>
-                                                                {isCustom ? (
-                                                                    <span className="text-[10px] uppercase bg-muted px-1 rounded text-muted-foreground flex-shrink-0">{customField.type}</span>
-                                                                ) : (
-                                                                    <span className="text-[10px] uppercase bg-primary/5 px-1 rounded text-primary/70 flex-shrink-0 border border-primary/10 font-semibold tracking-wider">{t('fields.system')}</span>
-                                                                )}
-                                                            </div>
-                                                            <div className="flex items-center gap-2">
-                                                                {isCustom && (
-                                                                    <>
-                                                                        <Button
-                                                                            variant="ghost"
-                                                                            size="icon"
-                                                                            className="h-8 w-8 text-muted-foreground hover:text-primary"
-                                                                            onClick={(e) => {
-                                                                                e.stopPropagation();
-                                                                                if (customField.originalId) {
-                                                                                    setEditingFieldId(customField.originalId);
-                                                                                    setNewLabel(customField.label);
-                                                                                    setNewType(customField.type);
-                                                                                    setSheetMode('edit_field');
-                                                                                }
-                                                                            }}
-                                                                        >
-                                                                            <Pencil className="w-4 h-4" />
-                                                                        </Button>
-                                                                        <Button
-                                                                            variant="ghost"
-                                                                            size="icon"
-                                                                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                                                                            onClick={(e) => {
-                                                                                e.stopPropagation();
-                                                                                if (customField.originalId) setDeleteConfirm({ type: 'field', id: customField.originalId });
-                                                                            }}
-                                                                        >
-                                                                            <Trash2 className="w-4 h-4" />
-                                                                        </Button>
-                                                                    </>
-                                                                )}
-                                                                <Switch
-                                                                    checked={false}
-                                                                    onCheckedChange={() => toggleVisible(field.id)} // id is now robust (UUID for custom, string for standard)
-                                                                    className="flex-shrink-0"
-                                                                />
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                })}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            <Button
-                                className="w-full h-12 text-base mt-2"
-                                onClick={handleSaveCategory}
-                                disabled={isSaving}
-                            >
-                                {isSaving ? t('actions.saving') : t('settings.categories.saveConfig')}
-                            </Button>
-                        </div>
-                    )}
+                                <Button
+                                    className="w-full h-12 text-base mt-2"
+                                    onClick={handleSaveCategory}
+                                    disabled={isSaving}
+                                >
+                                    {isSaving ? t('actions.saving') : t('settings.categories.saveConfig')}
+                                </Button>
+                            </div>
+                        )}
+                    </div>
                 </SheetContent>
             </Sheet>
 
