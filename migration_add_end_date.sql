@@ -1,0 +1,1 @@
+ALTER TABLE logs ADD COLUMN end_date TEXT;

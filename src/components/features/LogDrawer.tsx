@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, Copy, X, Trash2, Save, Circle, Clock, CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -28,6 +28,7 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
     const { selectedLog, closeDrawer } = useLogContext();
 
     const [date, setDate] = useState<Date | undefined>(new Date());
+    const [endDate, setEndDate] = useState<Date | undefined>(undefined);
     const [title, setTitle] = useState('');
     const [amount, setAmount] = useState('');
     const [category, setCategory] = useState('');
@@ -35,8 +36,8 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
     const [endTime, setEndTime] = useState('');
     const [memo, setMemo] = useState('');
     const [emoji, setEmoji] = useState('📅'); // Default emoji
-    const [imageFile, setImageFile] = useState<File | null>(null);
-    const [isUploading, setIsUploading] = useState(false);
+    const [status, setStatus] = useState<string>('Pending');
+    const [imageUrlInput, setImageUrlInput] = useState('');
 
     // Dynamic Fields & Categories State
     const [customFields, setCustomFields] = useState<FieldDefinition[]>([]);
@@ -54,14 +55,23 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
     // Sync form when selectedLog changes
     React.useEffect(() => {
         if (selectedLog) {
-            setDate(new Date(selectedLog.date));
+            // Fix: Parse dates as local components to avoid timezone shifts
+            const parseLocal = (s: string) => {
+                const [y, m, d] = s.split('-').map(Number);
+                return new Date(y, m - 1, d);
+            };
+
+            setDate(parseLocal(selectedLog.date));
             setTitle(selectedLog.title);
             setAmount(selectedLog.amount?.toString() || '');
             setCategory(selectedLog.category);
             setStartTime(selectedLog.start_time || '');
             setEndTime(selectedLog.end_time || '');
+            setEndDate(selectedLog.end_date ? parseLocal(selectedLog.end_date) : undefined);
             setMemo(selectedLog.memo || '');
             setEmoji(selectedLog.emoji || '📅');
+            setStatus(selectedLog.status || 'Planned'); // Default to Planned if missing in valid log
+            setImageUrlInput(selectedLog.image_url || '');
             setCustomData(selectedLog.custom_data || {});
         } else {
             // Reset if adding new
@@ -77,8 +87,9 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
             setEndTime('');
             setMemo('');
             setEmoji('📅');
+            setStatus('Pending'); // Default for new log
             setCustomData({});
-            setImageFile(null);
+            setImageUrlInput('');
         }
     }, [selectedLog, open, categoriesList]);
 
@@ -94,6 +105,53 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
         }
     };
 
+    const handleDuplicate = async () => {
+        if (!date || !title || !category) {
+            alert(t('actions.fillRequired'));
+            return;
+        }
+
+        try {
+            const imageUrl = imageUrlInput || null;
+
+            // Determine status logic based on visibility
+            const currentCatDef = categoriesList.find(c => c.name === category);
+            const isStatusVisible = currentCatDef?.settings?.visible_fields?.includes('status');
+            const finalStatus = isStatusVisible ? status : (endDate ? 'Completed' : 'Planned');
+
+            // Create new log with current form data
+            await createLog({
+                date: format(date, 'yyyy-MM-dd'),
+                title,
+                category: category as LogCategory,
+                amount: amount ? parseFloat(amount) : null,
+                memo: memo || null,
+                status: finalStatus as any,
+                image_url: imageUrl,
+                emoji,
+                start_time: startTime || null,
+                end_time: endTime || null,
+                end_date: endDate ? format(endDate, 'yyyy-MM-dd') : null,
+                custom_data: customData,
+            });
+
+            // Reset form & Close
+            setTitle('');
+            setAmount('');
+            setMemo('');
+            setCategory('');
+            setEmoji('📅');
+            setStartTime('');
+            setEndTime('');
+            setImageUrlInput('');
+            setDate(new Date());
+
+            onOpenChange(false);
+        } catch (error) {
+            console.error('Failed to duplicate log', error);
+        }
+    };
+
     const handleSave = async () => {
         console.log('handleSave called', { date, title, category });
         if (!date || !title || !category) {
@@ -102,28 +160,13 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
         }
 
         try {
-            let imageUrl: string | null = null;
+            const imageUrl = imageUrlInput || null;
 
-            if (imageFile) {
-                setIsUploading(true);
-                const supabase = createClient();
-                const fileExt = imageFile.name.split('.').pop();
-                const fileName = `${Math.random()}.${fileExt}`;
-                const filePath = `${fileName}`;
+            // Determine status logic based on visibility
+            const currentCatDef = categoriesList.find(c => c.name === category);
+            const isStatusVisible = currentCatDef?.settings?.visible_fields?.includes('status');
+            const finalStatus = isStatusVisible ? status : (endDate ? 'Completed' : 'Planned');
 
-                const { error: uploadError } = await supabase.storage
-                    .from('images')
-                    .upload(filePath, imageFile);
-
-                if (uploadError) throw uploadError;
-
-                const { data: { publicUrl } } = supabase.storage
-                    .from('images')
-                    .getPublicUrl(filePath);
-
-                imageUrl = publicUrl;
-                setIsUploading(false);
-            }
 
             if (selectedLog) {
                 // Update
@@ -133,10 +176,12 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
                     category: category as LogCategory,
                     amount: amount ? parseFloat(amount) : null,
                     memo: memo || null,
-                    image_url: imageUrl || selectedLog.image_url, // Keep old if not new
+                    status: finalStatus as any,
+                    image_url: imageUrl,
                     emoji,
                     start_time: startTime || null,
                     end_time: endTime || null,
+                    end_date: endDate ? format(endDate, 'yyyy-MM-dd') : null,
                     custom_data: customData,
                 });
             } else {
@@ -147,11 +192,12 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
                     category: category as LogCategory,
                     amount: amount ? parseFloat(amount) : null,
                     memo: memo || null,
-                    status: 'Completed',
+                    status: finalStatus as any,
                     image_url: imageUrl,
                     emoji,
                     start_time: startTime || null,
                     end_time: endTime || null,
+                    end_date: endDate ? format(endDate, 'yyyy-MM-dd') : null,
                     custom_data: customData,
                 });
             }
@@ -166,13 +212,12 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
                         text: `${title}\n${memo ? '\n' + memo : ''}\n\nVia LifeLog`,
                     };
 
-                    if (imageFile) {
+                    if (imageUrlInput) {
                         try {
-                            if (navigator.canShare && navigator.canShare({ files: [imageFile] })) {
-                                shareData.files = [imageFile];
-                            }
+                            // Could share URL, but standard share might just be text
+                            // shareData.url = imageUrlInput; 
                         } catch (e) {
-                            console.warn('File sharing check failed', e);
+                            console.warn('Share setup failed', e);
                         }
                     }
 
@@ -190,7 +235,7 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
             setEmoji('📅');
             setStartTime('');
             setEndTime('');
-            setImageFile(null);
+            setImageUrlInput('');
             setDate(new Date());
 
             onOpenChange(false);
@@ -219,32 +264,7 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
                         />
                     </div>
 
-                    {/* Date Picker */}
-                    <div className="grid gap-2">
-                        <Label htmlFor="date">{t('fields.date')}</Label>
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <Button
-                                    variant={"outline"}
-                                    className={cn(
-                                        "w-full justify-start text-left font-normal",
-                                        !date && "text-muted-foreground"
-                                    )}
-                                >
-                                    <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {date ? format(date, "PPP") : <span>{t('fields.pickDate')}</span>}
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                                <Calendar
-                                    mode="single"
-                                    selected={date}
-                                    onSelect={setDate}
-                                    initialFocus
-                                />
-                            </PopoverContent>
-                        </Popover>
-                    </div>
+                    {/* Logic moved to dynamic loop for Sort Order support */}
 
                     <div className="grid gap-2">
                         <Label htmlFor="category">{t('fields.category')}</Label>
@@ -269,6 +289,8 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
                         </Select>
                     </div>
 
+
+
                     {/* Dynamic Fields (Ordered) */}
                     {(() => {
                         const currentCat = categoriesList.find(c => c.name === category);
@@ -276,6 +298,76 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
 
                         return orderedIds.map(fieldId => {
                             // Standard Fields
+                            if (fieldId === 'date') {
+                                return (
+                                    <div key="date" className="grid gap-2">
+                                        <Label htmlFor="date">{t('fields.date')}</Label>
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <Button
+                                                    variant={"outline"}
+                                                    className={cn(
+                                                        "w-full justify-start text-left font-normal",
+                                                        !date && "text-muted-foreground"
+                                                    )}
+                                                >
+                                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                                    {date ? format(date, "PPP") : <span>{t('fields.pickDate')}</span>}
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0" align="start">
+                                                <Calendar
+                                                    mode="single"
+                                                    selected={date}
+                                                    onSelect={setDate}
+                                                    initialFocus
+                                                />
+                                            </PopoverContent>
+                                        </Popover>
+                                    </div>
+                                );
+                            }
+                            if (fieldId === 'end_date') {
+                                return (
+                                    <div key="end_date" className="grid gap-2">
+                                        <Label htmlFor="end_date">{t('fields.end_date')}</Label>
+                                        <div className="flex gap-2">
+                                            <Popover>
+                                                <PopoverTrigger asChild>
+                                                    <Button
+                                                        variant={"outline"}
+                                                        className={cn(
+                                                            "flex-1 justify-start text-left font-normal",
+                                                            !endDate && "text-muted-foreground"
+                                                        )}
+                                                    >
+                                                        <CalendarIcon className="mr-2 h-4 w-4" />
+                                                        {endDate ? format(endDate, "PPP") : <span>{t('fields.pickDate')}</span>}
+                                                    </Button>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-auto p-0" align="start">
+                                                    <Calendar
+                                                        mode="single"
+                                                        selected={endDate}
+                                                        onSelect={setEndDate}
+                                                        initialFocus
+                                                    />
+                                                </PopoverContent>
+                                            </Popover>
+                                            {endDate && (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="shrink-0 text-muted-foreground hover:text-foreground"
+                                                    onClick={() => setEndDate(undefined)}
+                                                >
+                                                    <X className="h-4 w-4" />
+                                                </Button>
+                                            )}
+                                        </div>
+                                    </div>
+                                );
+                            }
                             if (fieldId === 'time') {
                                 return (
                                     <div key="time" className="grid gap-2">
@@ -319,11 +411,11 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
                             if (fieldId === 'memo') {
                                 return (
                                     <div key="memo" className="grid gap-2">
-                                        <Label htmlFor="memo">{t('fields.memo')}</Label>
+                                        <Label htmlFor="memo">{t('fields.note')}</Label>
                                         <textarea
                                             id="memo"
                                             className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                            placeholder={t('fields.memoPlaceholder')}
+                                            placeholder={t('fields.notePlaceholder')}
                                             value={memo}
                                             onChange={(e) => setMemo(e.target.value)}
                                         />
@@ -333,13 +425,46 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
                             if (fieldId === 'image_url') {
                                 return (
                                     <div key="image_url" className="grid gap-2">
-                                        <Label htmlFor="image">{t('fields.image')}</Label>
+                                        <Label htmlFor="image">{t('fields.image_url')}</Label>
                                         <Input
                                             id="image"
-                                            type="file"
-                                            accept="image/*"
-                                            onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+                                            type="url"
+                                            placeholder="https://..."
+                                            value={imageUrlInput}
+                                            onChange={(e) => setImageUrlInput(e.target.value)}
                                         />
+                                    </div>
+                                );
+                            }
+                            if (fieldId === 'status') {
+                                return (
+                                    <div key="status" className="grid gap-2">
+                                        <Label htmlFor="status">{t('common.status.label') || 'Status'}</Label>
+                                        <Select value={status} onValueChange={setStatus}>
+                                            <SelectTrigger>
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="Pending">
+                                                    <div className="flex items-center gap-2">
+                                                        <Circle className="w-4 h-4 text-muted-foreground" />
+                                                        <span>{t('common.status.pending')}</span>
+                                                    </div>
+                                                </SelectItem>
+                                                <SelectItem value="Planned">
+                                                    <div className="flex items-center gap-2">
+                                                        <Clock className="w-4 h-4 text-blue-500" />
+                                                        <span>{t('common.status.planned')}</span>
+                                                    </div>
+                                                </SelectItem>
+                                                <SelectItem value="Completed">
+                                                    <div className="flex items-center gap-2">
+                                                        <CheckCircle2 className="w-4 h-4 text-green-500" />
+                                                        <span>{t('common.status.completed')}</span>
+                                                    </div>
+                                                </SelectItem>
+                                            </SelectContent>
+                                        </Select>
                                     </div>
                                 );
                             }
@@ -409,17 +534,41 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
                     })()}
                 </div>
 
-                <SheetFooter className="absolute bottom-4 left-4 right-4 pb-safe flex gap-3">
-                    {selectedLog && (
-                        <Button variant="destructive" onClick={handleDelete} className="flex-1 h-12 text-lg">
-                            {t('actions.delete')}
+                <SheetFooter className="absolute bottom-4 left-4 right-4 pb-safe">
+                    {selectedLog ? (
+                        <div className="flex w-full border rounded-xl overflow-hidden shadow-sm divide-x bg-background">
+                            <Button
+                                variant="ghost"
+                                onClick={handleDelete}
+                                className="flex-1 h-12 rounded-none hover:bg-destructive/10 text-destructive gap-1.5 text-sm"
+                            >
+                                <Trash2 className="w-4 h-4" />
+                                <span>{t('actions.delete')}</span>
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                onClick={handleDuplicate}
+                                className="flex-1 h-12 rounded-none hover:bg-muted gap-1.5 text-sm"
+                            >
+                                <Copy className="w-4 h-4" />
+                                <span>{t('actions.saveAsCopy')}</span>
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                onClick={handleSave}
+                                className="flex-1 h-12 rounded-none hover:bg-muted text-primary gap-1.5 text-sm font-medium"
+                            >
+                                <Save className="w-4 h-4" />
+                                <span>{t('actions.updateLog')}</span>
+                            </Button>
+                        </div>
+                    ) : (
+                        <Button onClick={handleSave} className="w-full h-12 text-lg">
+                            {t('actions.saveLog')}
                         </Button>
                     )}
-                    <Button onClick={handleSave} disabled={isUploading} className="flex-1 h-12 text-lg">
-                        {isUploading ? t('actions.saving') : (selectedLog ? t('actions.updateLog') : t('actions.saveLog'))}
-                    </Button>
                 </SheetFooter>
             </SheetContent>
-        </Sheet>
+        </Sheet >
     );
 }

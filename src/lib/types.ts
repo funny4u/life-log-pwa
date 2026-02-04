@@ -17,12 +17,13 @@ export interface Log {
     id: string;
     created_at: string;
     date: string;
+    end_date?: string | null;
     title: string;
     category: LogCategory;
     amount?: number | null;
     image_url?: string | null;
     memo?: string | null;
-    status?: 'Planned' | 'Completed' | null;
+    status?: 'Pending' | 'Planned' | 'Completed' | null;
     emoji?: string | null;
     start_time?: string | null;
     end_time?: string | null;
@@ -31,6 +32,20 @@ export interface Log {
 }
 
 export type FieldType = 'text' | 'number' | 'select' | 'multiselect' | 'time' | 'date' | 'boolean' | 'url' | 'email' | 'phone' | 'percent' | 'currency' | 'duration' | 'rating' | 'barcode' | 'user' | 'attachment';
+
+export type AppMode = 'all' | 'financial' | 'journal' | 'planner' | 'maintenance';
+
+export interface ViewConfiguration {
+    viewMode: 'list' | 'gallery' | 'calendar' | 'board' | 'table' | 'feed';
+    filter?: {
+        categories?: string[];
+        type?: string[];
+    };
+    sort?: {
+        key: string;
+        direction: 'asc' | 'desc';
+    };
+}
 
 export interface FieldDefinition {
     id: string;

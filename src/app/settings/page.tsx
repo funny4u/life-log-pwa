@@ -39,11 +39,14 @@ import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 
 const STANDARD_FIELDS = [
+    { id: 'date', label: 'Start Date', icon: '📅' },
+    { id: 'end_date', label: 'End Date', icon: '🔚' },
     { id: 'time', label: 'Time', icon: '⏰' },
     { id: 'amount', label: 'Amount ($)', icon: '💰' },
     { id: 'memo', label: 'Memo', icon: '📝' },
     { id: 'image_url', label: 'Image', icon: '📷' },
     { id: 'share', label: 'Share', icon: '📤' },
+    { id: 'status', label: 'Status', icon: '🔖' },
 ];
 
 const PRESET_COLORS = [

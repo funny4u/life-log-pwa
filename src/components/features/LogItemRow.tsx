@@ -59,10 +59,14 @@ export function LogItemRow({ log, categoryDef, isSelectionMode, isSelected, onTo
             )}
 
             <div
-                className={cn("w-10 h-10 rounded-full flex items-center justify-center text-xl flex-shrink-0")}
+                className={cn("w-10 h-10 rounded-full flex items-center justify-center text-xl flex-shrink-0 overflow-hidden")}
                 style={{ backgroundColor: color + '20', color: color }}
             >
-                {displayEmoji}
+                {log.image_url ? (
+                    <img src={log.image_url} alt="" className="w-full h-full object-cover" />
+                ) : (
+                    displayEmoji
+                )}
             </div>
 
             <div className="flex-1 min-w-0">

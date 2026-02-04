@@ -1,12 +1,17 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Log, Category } from '@/lib/types';
+import { Log, Category, AppMode } from '@/lib/types';
+import { useLanguage } from '@/components/providers/LanguageProvider';
 import { TopBar } from '@/components/layout/TopBar';
 import { LogListView } from '@/components/features/LogList';
 import { GalleryView } from '@/components/features/GalleryView';
+import { LogTableView } from '@/components/features/LogTableView';
+import { JournalView } from '@/components/features/JournalView';
+import { CalendarView } from '@/components/features/CalendarView';
+import { KanbanView } from '@/components/features/KanbanView';
 import { bulkDeleteLogs } from '@/app/actions';
-import { LayoutGrid, List as ListIcon, SlidersHorizontal, ArrowUpDown, CheckSquare, Trash2, X } from 'lucide-react';
+import { LayoutGrid, List as ListIcon, SlidersHorizontal, ArrowUpDown, CheckSquare, Trash2, X, DollarSign, BookHeart, Calendar, Wrench, Table as TableIcon, ScrollText, KanbanSquare, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
     Popover,
@@ -22,16 +27,44 @@ interface HomeClientProps {
 }
 
 export function HomeClient({ initialLogs, categories }: HomeClientProps) {
-    const [viewMode, setViewMode] = useState<'list' | 'gallery'>('list');
+    const { t } = useLanguage(); // Need to use language hook
+    const [viewMode, setViewMode] = useState<'list' | 'gallery' | 'table' | 'feed' | 'calendar' | 'board'>('list');
+    const [appMode, setAppMode] = useState<AppMode>('all');
 
     // Selection State
     const [isSelectionMode, setIsSelectionMode] = useState(false);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [isDeleting, setIsDeleting] = useState(false);
+    const [showFilterBar, setShowFilterBar] = useState(false);
 
     // Filter & Sort State
     const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
     const [sortConfig, setSortConfig] = useState<{ key: 'date' | 'amount'; direction: 'asc' | 'desc' }>({ key: 'date', direction: 'desc' });
+
+    // Mode Switching Effect
+    React.useEffect(() => {
+        switch (appMode) {
+            case 'financial':
+                setViewMode('table');
+                // Future: Set filter to financial categories
+                break;
+            case 'journal':
+                setViewMode('feed');
+                // Future: Set filter to journal categories
+                break;
+            case 'planner':
+                setViewMode('calendar'); // Future: calendar
+                break;
+            case 'maintenance':
+                setViewMode('board');
+                break;
+            default:
+                setViewMode('list');
+                break;
+        }
+        // Reset category filter when mode changes (optional, but good for now)
+        setCategoryFilter(null);
+    }, [appMode]);
 
     const categoryMap = React.useMemo(() => {
         return categories.reduce((acc, cat) => {
@@ -43,6 +76,19 @@ export function HomeClient({ initialLogs, categories }: HomeClientProps) {
     // Derived State: Filtered & Sorted Logs
     const filteredLogs = React.useMemo(() => {
         let result = [...initialLogs];
+
+        // 0. App Mode Filter (Placeholder for now)
+        // In the future, this will filter by specific category groups defined in settings
+        if (appMode !== 'all') {
+            if (appMode === 'financial') {
+                result = result.filter(log => log.amount !== null && log.amount !== undefined);
+            } else if (appMode === 'journal') {
+                result = result.filter(log => log.memo && log.memo.trim() !== '');
+
+            } else if (appMode === 'maintenance') {
+                result = result.filter(log => log.status === 'Planned' || log.status === 'Completed' || log.status === 'Pending');
+            }
+        }
 
         // 1. Category Filter
         if (categoryFilter) {
@@ -64,7 +110,7 @@ export function HomeClient({ initialLogs, categories }: HomeClientProps) {
         });
 
         return result;
-    }, [initialLogs, categoryFilter, sortConfig]);
+    }, [initialLogs, categoryFilter, sortConfig, appMode]);
 
     // Calculate Totals if refined
     const totalAmount = React.useMemo(() => {
@@ -104,10 +150,42 @@ export function HomeClient({ initialLogs, categories }: HomeClientProps) {
         }
     };
 
+    const MODES: { value: AppMode; label: string; icon: any }[] = [
+        { value: 'all', label: t('nav.modes.all'), icon: LayoutGrid },
+        { value: 'financial', label: t('nav.modes.financial'), icon: DollarSign },
+        { value: 'journal', label: t('nav.modes.journal'), icon: BookHeart },
+        { value: 'planner', label: t('nav.modes.planner'), icon: Calendar },
+        { value: 'maintenance', label: t('nav.modes.maintenance'), icon: Wrench },
+    ];
+
+    const currentModeLabel = MODES.find(m => m.value === appMode)?.label;
+
     return (
         <div className="flex flex-col h-full w-full relative">
             <TopBar
-                title={isSelectionMode ? `${selectedIds.size} Selected` : "My Logs"}
+                title={isSelectionMode ? (
+                    `${selectedIds.size} Selected`
+                ) : (
+                    <div className="flex items-center">
+                        <Select value={appMode} onValueChange={(v) => setAppMode(v as AppMode)}>
+                            <SelectTrigger className="h-9 border-none bg-transparent shadow-none focus:ring-0 gap-2 px-0 hover:bg-muted/50 transition-colors">
+                                <SelectValue>
+                                    <span className="font-semibold text-lg">{currentModeLabel}</span>
+                                </SelectValue>
+                            </SelectTrigger>
+                            <SelectContent>
+                                {MODES.map(mode => (
+                                    <SelectItem key={mode.value} value={mode.value}>
+                                        <div className="flex items-center gap-2">
+                                            <mode.icon className="w-4 h-4 opacity-70" />
+                                            <span>{mode.label}</span>
+                                        </div>
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                )}
                 actions={
                     <div className="flex items-center gap-2">
                         {isSelectionMode ? (
@@ -133,6 +211,15 @@ export function HomeClient({ initialLogs, categories }: HomeClientProps) {
                             </>
                         ) : (
                             <>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className={cn("h-8 w-8", (showFilterBar || categoryFilter) && "text-primary bg-primary/10")}
+                                    onClick={() => setShowFilterBar(!showFilterBar)}
+                                >
+                                    <Filter className="w-5 h-5" />
+                                    {categoryFilter && <div className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full ring-2 ring-background" />}
+                                </Button>
                                 <Button
                                     variant="ghost"
                                     size="icon"
@@ -168,6 +255,40 @@ export function HomeClient({ initialLogs, categories }: HomeClientProps) {
                                                         onClick={() => setViewMode('gallery')}
                                                     >
                                                         <LayoutGrid className="w-3 h-3 mr-1" /> Gallery
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className={cn("flex-1 h-7 rounded-md text-xs", viewMode === 'table' && "bg-background shadow-sm")}
+                                                        onClick={() => setViewMode('table')}
+                                                    >
+                                                        <TableIcon className="w-3 h-3 mr-1" /> Table
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className={cn("flex-1 h-7 rounded-md text-xs", viewMode === 'feed' && "bg-background shadow-sm")}
+                                                        onClick={() => setViewMode('feed')}
+                                                    >
+                                                        <ScrollText className="w-3 h-3 mr-1" /> Feed
+                                                    </Button>
+                                                </div>
+                                                <div className="flex items-center bg-muted/50 rounded-lg p-1 h-9 mt-2">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className={cn("flex-1 h-7 rounded-md text-xs", viewMode === 'calendar' && "bg-background shadow-sm")}
+                                                        onClick={() => setViewMode('calendar')}
+                                                    >
+                                                        <Calendar className="w-3 h-3 mr-1" /> Cal
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className={cn("flex-1 h-7 rounded-md text-xs", viewMode === 'board' && "bg-background shadow-sm")}
+                                                        onClick={() => setViewMode('board')}
+                                                    >
+                                                        <KanbanSquare className="w-3 h-3 mr-1" /> Board
                                                     </Button>
                                                 </div>
                                             </div>
@@ -207,28 +328,30 @@ export function HomeClient({ initialLogs, categories }: HomeClientProps) {
             />
 
             {/* Filter Bar */}
-            <div className="w-full bg-background/95 backdrop-blur-sm border-b z-30 px-4 py-2 flex justify-between items-center gap-2">
-                <Select value={categoryFilter || "all"} onValueChange={(val) => setCategoryFilter(val === "all" ? null : val)}>
-                    <SelectTrigger className="w-full h-9">
-                        <SelectValue placeholder="All Categories" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">All Categories</SelectItem>
-                        {categories.map(cat => (
-                            <SelectItem key={cat.id} value={cat.name}>
-                                {cat.name}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
+            {showFilterBar && (
+                <div className="w-full bg-background/95 backdrop-blur-sm border-b z-30 px-4 py-2 flex justify-between items-center gap-2 animate-in slide-in-from-top-2 fade-in duration-200">
+                    <Select value={categoryFilter || "all"} onValueChange={(val) => setCategoryFilter(val === "all" ? null : val)}>
+                        <SelectTrigger className="w-full h-9">
+                            <SelectValue placeholder={t('stats.filter.all')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">{t('stats.filter.all')}</SelectItem>
+                            {categories.map(cat => (
+                                <SelectItem key={cat.id} value={cat.name}>
+                                    {cat.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
 
-                {/* Active Filter Summary (Total Amount) */}
-                {categoryFilter && (
-                    <div className="flex-shrink-0 text-xs font-medium bg-muted px-2 py-1 rounded">
-                        Total: ${totalAmount.toLocaleString()}
-                    </div>
-                )}
-            </div>
+                    {/* Active Filter Summary (Total Amount) */}
+                    {categoryFilter && (
+                        <div className="flex-shrink-0 text-xs font-medium bg-muted px-2 py-1 rounded">
+                            Total: ${totalAmount.toLocaleString()}
+                        </div>
+                    )}
+                </div>
+            )}
 
             {/* List/Gallery Content */}
             <div className="flex-1 overflow-y-auto w-full">
@@ -240,8 +363,22 @@ export function HomeClient({ initialLogs, categories }: HomeClientProps) {
                         selectedIds={selectedIds}
                         onToggleSelection={toggleItemSelection}
                     />
-                ) : (
+                ) : viewMode === 'gallery' ? (
                     <GalleryView logs={filteredLogs} categoryMap={categoryMap} />
+                ) : viewMode === 'feed' ? (
+                    <JournalView logs={filteredLogs} categoryMap={categoryMap} />
+                ) : viewMode === 'calendar' ? (
+                    <CalendarView logs={filteredLogs} categoryMap={categoryMap} />
+                ) : viewMode === 'board' ? (
+                    <KanbanView logs={filteredLogs} categoryMap={categoryMap} />
+                ) : (
+                    <LogTableView
+                        logs={filteredLogs}
+                        categoryMap={categoryMap}
+                        isSelectionMode={isSelectionMode}
+                        selectedIds={selectedIds}
+                        onToggleSelection={toggleItemSelection}
+                    />
                 )}
             </div>
         </div>

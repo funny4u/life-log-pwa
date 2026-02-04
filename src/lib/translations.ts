@@ -3,11 +3,19 @@ export type Language = 'en' | 'ko';
 export const translations = {
     en: {
         nav: {
+            home: 'Home',
             calendar: 'Calendar',
             stats: 'Stats',
             add: 'Add',
             search: 'Search',
             settings: 'Settings',
+            modes: {
+                all: 'All',
+                financial: 'Financial',
+                journal: 'Journal',
+                planner: 'Planner',
+                maintenance: 'Maintenance',
+            },
         },
         actions: {
             save: 'Save',
@@ -26,6 +34,7 @@ export const translations = {
             editLog: 'Edit Log',
             saveLog: 'Save Log',
             updateLog: 'Update Log',
+            saveAsCopy: 'Save Copy',
         },
         settings: {
             title: 'Settings',
@@ -107,20 +116,28 @@ export const translations = {
             noResults: 'No results found for "{query}"',
             startTyping: 'Start typing to search through your life logs...',
         },
+        maintenance: {
+            backlog: 'Backlog / Open',
+            planned: 'Planned',
+            completed: 'Completed',
+        },
         fields: {
+            date: 'Start Date',
+            end_date: 'End Date',
             time: 'Time',
             amount: 'Amount',
-            memo: 'Memo',
-            image_url: 'Image',
+            note: 'Note',
+            memo: 'Note', // Alias for settings compatibility
+            image_url: 'Image Link',
             share: 'Share',
             system: 'SYSTEM',
             title: 'Title',
             titlePlaceholder: 'e.g. Shopping at Costco',
-            date: 'Date',
             pickDate: 'Pick a date',
             category: 'Category',
             selectCategory: 'Select category',
-            memoPlaceholder: 'Additional details...',
+            notePlaceholder: 'Additional details...',
+            status: 'Status (Manual)',
         },
         common: {
             default: 'Default',
@@ -129,15 +146,29 @@ export const translations = {
             share: 'Share',
             locale: 'en-US',
             currency: 'USD',
+            status: {
+                label: 'Status',
+                pending: 'Pending',
+                planned: 'Planned',
+                completed: 'Completed',
+            },
         }
     },
     ko: {
         nav: {
+            home: '홈',
             calendar: '달력',
             stats: '통계',
             add: '추가',
             search: '검색',
             settings: '설정',
+            modes: {
+                all: '전체',
+                financial: '가계부',
+                journal: '일기',
+                planner: '플래너',
+                maintenance: '유지보수',
+            },
         },
         actions: {
             save: '저장',
@@ -156,6 +187,7 @@ export const translations = {
             editLog: '로그 수정',
             saveLog: '로그 저장',
             updateLog: '로그 업데이트',
+            saveAsCopy: '복제 저장',
         },
         settings: {
             title: '설정',
@@ -237,20 +269,28 @@ export const translations = {
             noResults: '"{query}"에 대한 결과가 없습니다.',
             startTyping: '검색어를 입력하여 로그를 찾아보세요...',
         },
+        maintenance: {
+            backlog: '백로그 / 대기',
+            planned: '계획됨',
+            completed: '완료',
+        },
         fields: {
+            date: '시작 날짜',
+            end_date: '종료 날짜',
             time: '시간',
             amount: '금액',
-            memo: '메모',
-            image_url: '이미지',
+            note: '노트',
+            memo: '노트', // Alias for settings compatibility
+            image_url: '이미지 링크',
             share: '공유',
             system: '시스템',
             title: '제목',
             titlePlaceholder: '예: 코스트코 장보기',
-            date: '날짜',
             pickDate: '날짜 선택',
             category: '카테고리',
             selectCategory: '카테고리 선택',
-            memoPlaceholder: '상세 내용...',
+            notePlaceholder: '상세 내용...',
+            status: '상태 (수동)',
         },
         common: {
             default: '기본값',
@@ -259,6 +299,12 @@ export const translations = {
             share: '공유',
             locale: 'ko-KR',
             currency: 'KRW',
+            status: {
+                label: '상태',
+                pending: '대기',
+                planned: '계획됨',
+                completed: '완료',
+            },
         }
     }
 };

@@ -39,11 +39,14 @@ export function GalleryView({ logs, categoryMap }: GalleryViewProps) {
                         {/* Image or Placeholder */}
                         <div className="aspect-square w-full bg-muted/30 relative flex items-center justify-center overflow-hidden">
                             {log.image_url ? (
-                                <Image
+                                <img
                                     src={log.image_url}
                                     alt={log.title}
-                                    fill
                                     className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                    onError={(e) => {
+                                        (e.target as HTMLImageElement).style.display = 'none';
+                                        (e.target as HTMLImageElement).parentElement!.classList.add('bg-muted');
+                                    }}
                                 />
                             ) : (
                                 <span className="text-4xl select-none">{log.emoji || category?.icon || '📝'}</span>

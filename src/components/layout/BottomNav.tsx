@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { Plus, Search, Calendar, PieChart, Settings } from 'lucide-react';
+import { Plus, Search, Calendar, PieChart, Settings, LayoutGrid } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useLayoutContext } from '@/components/providers/LayoutProvider';
 import { useLogContext } from '@/components/providers/LogProvider';
@@ -17,7 +17,7 @@ export function BottomNav() {
     const router = useRouter();
 
     const navItems = [
-        { label: t('nav.calendar'), icon: Calendar, href: '/calendar', action: () => router.push('/calendar') },
+        { label: t('nav.home'), icon: LayoutGrid, href: '/', action: () => router.push('/') },
         { label: t('nav.stats'), icon: PieChart, href: '/stats', action: () => router.push('/stats') },
         { label: t('nav.add'), icon: Plus, isAction: true, action: () => openDrawer() },
         { label: t('nav.search'), icon: Search, href: '/search', action: () => router.push('/search') },

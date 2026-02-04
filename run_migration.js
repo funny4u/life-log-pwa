@@ -13,7 +13,7 @@ async function run() {
 
     try {
         await client.connect();
-        const sql = fs.readFileSync('migration_fix_schema.sql', 'utf8');
+        const sql = fs.readFileSync('migration_add_end_date.sql', 'utf8');
         await client.query(sql);
         console.log('Migration applied successfully');
     } catch (err) {
