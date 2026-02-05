@@ -11,6 +11,7 @@ export interface Category {
     settings?: {
         visible_fields?: string[];
     } | null;
+    default_transaction_type?: 'expense' | 'income' | 'none';
 }
 
 export interface Log {

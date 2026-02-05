@@ -20,6 +20,7 @@ export const translations = {
         actions: {
             save: 'Save',
             cancel: 'Cancel',
+            search: 'Search',
             delete: 'Delete',
             edit: 'Edit',
             create: 'Create',
@@ -46,6 +47,10 @@ export const translations = {
                 edit: 'Edit Category',
                 namePlaceholder: 'Category Name',
                 saveConfig: 'Save Configuration',
+                transactionType: 'Default Transaction Type',
+                typeNone: 'None (Mixed)',
+                typeExpense: 'Expense (-)',
+                typeIncome: 'Income (+)',
             },
             fields: {
                 title: 'Log Fields',
@@ -173,6 +178,9 @@ export const translations = {
         actions: {
             save: '저장',
             cancel: '취소',
+            reset: '초기화',
+            search: '검색',
+            filter: '필터',
             delete: '삭제',
             edit: '수정',
             create: '생성',
@@ -199,6 +207,10 @@ export const translations = {
                 edit: '카테고리 수정',
                 namePlaceholder: '카테고리 이름',
                 saveConfig: '구성 저장',
+                transactionType: '기본 거래 유형',
+                typeNone: '없음 (혼합)',
+                typeExpense: '지출 (-)',
+                typeIncome: '수입 (+)',
             },
             fields: {
                 title: '로그 필드',

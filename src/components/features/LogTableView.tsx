@@ -29,7 +29,7 @@ export function LogTableView({
     // Let's stick to a flat table for maximum density, as requested "Table/Ledger View".
 
     return (
-        <div className="w-full overflow-x-auto pb-20">
+        <div className="w-full max-w-[100vw] overflow-x-auto pb-20">
             <table className="w-full text-sm text-left border-collapse">
                 <thead className="bg-muted/50 text-muted-foreground font-medium sticky top-0 z-10">
                     <tr>

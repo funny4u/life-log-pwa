@@ -26,7 +26,7 @@ import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, us
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Trash2, GripVertical, Check, Pencil, Type, Hash, Clock, CheckSquare, ChevronsUpDown, Calendar, Link, Mail, Phone, Percent, DollarSign, Timer, Star, ScanBarcode, Users, File } from 'lucide-react';
+import { Plus, Trash2, GripVertical, Check, Pencil, Type, Hash, Clock, CheckSquare, ChevronsUpDown, Calendar, Link, Mail, Phone, Percent, DollarSign, Timer, Star, ScanBarcode, Users, File, Search } from 'lucide-react';
 // ... existing code ...
 import {
     Sheet,
@@ -141,7 +141,11 @@ export default function SettingsPage() {
     const [catName, setCatName] = useState('');
     const [catColor, setCatColor] = useState('#EF4444');
     const [catIcon, setCatIcon] = useState('🏷️');
+    const [catTransactionType, setCatTransactionType] = useState<'expense' | 'income' | 'none'>('none');
     const [isNotificationEnabled, setIsNotificationEnabled] = useState(false);
+
+    // Filter State
+    const [fieldSearch, setFieldSearch] = useState('');
 
     const [isSaving, setIsSaving] = useState(false);
 
@@ -162,6 +166,7 @@ export default function SettingsPage() {
                 setCatName('');
                 setCatColor('#EF4444');
                 setCatIcon('🏷️');
+                setCatTransactionType('none');
                 setEditingId(null);
                 setIsNotificationEnabled(false);
                 setVisibleFields(STANDARD_FIELDS.map(f => f.id)); // Default all standard enabled
@@ -287,6 +292,7 @@ export default function SettingsPage() {
                     name: catName,
                     color: catColor,
                     icon: catIcon,
+                    default_transaction_type: catTransactionType,
                     settings
                 });
             } else {
@@ -294,6 +300,7 @@ export default function SettingsPage() {
                     name: catName,
                     color: catColor,
                     icon: catIcon,
+                    default_transaction_type: catTransactionType,
                     settings
                 });
             }
@@ -304,12 +311,13 @@ export default function SettingsPage() {
         } finally {
             setIsSaving(false);
         }
-    }
+    };
 
     const startEditCategory = (cat: Category) => {
         setCatName(cat.name);
         setCatColor(cat.color || '#EF4444');
         setCatIcon(cat.icon || '🏷️');
+        setCatTransactionType(cat.default_transaction_type || 'none');
         setEditingId(cat.id);
 
         // Load visible fields from settings, or default to all standard if clean
@@ -480,7 +488,7 @@ export default function SettingsPage() {
             {/* Create/Edit Sheet */}
             <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
                 <SheetContent side="bottom" className="rounded-t-[20px] pb-safe pt-6 h-[90vh] w-full max-w-[100vw] flex flex-col gap-0 overflow-hidden">
-                    <div className="flex-1 overflow-y-auto px-1 pb-10" style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}>
+                    <div className="flex-1 min-h-0 overflow-y-auto px-1 pb-32" style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}>
                         {(sheetMode === 'create_field' || sheetMode === 'edit_field') ? (
                             <div className="grid gap-6">
                                 <SheetHeader className="text-left">
@@ -525,7 +533,7 @@ export default function SettingsPage() {
                                         <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start" side="bottom">
                                             <Command>
                                                 <CommandInput placeholder="Find a field type..." />
-                                                <CommandList>
+                                                <CommandList className="max-h-[40vh] overflow-y-auto">
                                                     <CommandEmpty>No field type found.</CommandEmpty>
                                                     <CommandGroup>
                                                         {FIELD_TYPES.map((type) => (
@@ -727,11 +735,44 @@ export default function SettingsPage() {
 
                                         {/* Inactive Fields */}
                                         <div>
-                                            <Label className="text-sm font-medium mb-2 block">{t('settings.fields.available')}</Label>
-                                            <div className="flex flex-col gap-2 border rounded-xl p-2 bg-muted/5 w-full">
-                                                {[...translatedStandardFields, ...fields.map(f => ({ ...f, id: f.id, originalId: f.id, icon: '📋' }))]
-                                                    .filter(f => !visibleFields.includes(f.id) && !visibleFields.includes((f as any).key_name))
-                                                    .map(field => {
+                                            <div className="flex items-center justify-between mb-2">
+                                                <Label className="text-sm font-medium">{t('settings.fields.available')}</Label>
+                                            </div>
+
+                                            {/* Search Input */}
+                                            <div className="relative mb-3">
+                                                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                                <Input
+                                                    placeholder={t('actions.search') || "Search fields..."}
+                                                    value={fieldSearch}
+                                                    onChange={(e) => setFieldSearch(e.target.value)}
+                                                    className="pl-9 h-9 text-base"
+                                                />
+                                            </div>
+
+                                            <div className="flex flex-col gap-2 border rounded-xl p-2 bg-muted/5 w-full max-h-[300px] overflow-y-auto">
+                                                {(() => {
+                                                    const filteredAvailable = [...translatedStandardFields, ...fields.map(f => ({ ...f, id: f.id, originalId: f.id, icon: '📋' }))]
+                                                        .filter(f => !visibleFields.includes(f.id) && !visibleFields.includes((f as any).key_name))
+                                                        .filter(f => {
+                                                            if (!fieldSearch) return true;
+                                                            const searchLower = fieldSearch.toLowerCase();
+                                                            return f.label?.toLowerCase().includes(searchLower) || (f as any).key_name?.toLowerCase().includes(searchLower);
+                                                        });
+
+                                                    if (filteredAvailable.length === 0) {
+                                                        return (
+                                                            <div className="text-center py-8 text-muted-foreground text-sm">
+                                                                {fieldSearch ? (
+                                                                    <span>No fields found matching "{fieldSearch}"</span>
+                                                                ) : (
+                                                                    <span>All available fields are active</span>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    }
+
+                                                    return filteredAvailable.map(field => {
                                                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                         const customField = field as any;
                                                         const isCustom = !!customField.originalId;
@@ -740,11 +781,14 @@ export default function SettingsPage() {
                                                             <div key={isCustom ? customField.originalId : field.id} className="flex items-center gap-3 p-2 bg-card/50 border border-dashed rounded-lg">
                                                                 <div className="flex items-center gap-3 flex-1 min-w-0 overflow-hidden opacity-70">
                                                                     <span className="text-xl flex-shrink-0">{field.icon}</span>
-                                                                    <span className="text-base font-medium truncate">{field.label}</span>
+                                                                    <div className="flex flex-col min-w-0">
+                                                                        <span className="text-base font-medium truncate">{field.label}</span>
+                                                                    </div>
+
                                                                     {isCustom ? (
-                                                                        <span className="text-[10px] uppercase bg-muted px-1 rounded text-muted-foreground flex-shrink-0">{customField.type}</span>
+                                                                        <span className="text-[10px] uppercase bg-muted px-1 rounded text-muted-foreground flex-shrink-0 ml-auto">{customField.type}</span>
                                                                     ) : (
-                                                                        <span className="text-[10px] uppercase bg-primary/5 px-1 rounded text-primary/70 flex-shrink-0 border border-primary/10 font-semibold tracking-wider">{t('fields.system')}</span>
+                                                                        <span className="text-[10px] uppercase bg-primary/5 px-1 rounded text-primary/70 flex-shrink-0 border border-primary/10 font-semibold tracking-wider ml-auto">{t('fields.system')}</span>
                                                                     )}
                                                                 </div>
                                                                 <div className="flex items-center gap-2">
@@ -787,8 +831,34 @@ export default function SettingsPage() {
                                                                 </div>
                                                             </div>
                                                         );
-                                                    })}
+                                                    });
+                                                })()}
                                             </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Transaction Type */}
+                                    <div className="space-y-4 w-full">
+                                        <Label>{t('settings.categories.transactionType')}</Label>
+                                        <div className="flex bg-muted/30 p-1 rounded-lg">
+                                            {(['none', 'expense', 'income'] as const).map((type) => (
+                                                <Button
+                                                    key={type}
+                                                    variant={catTransactionType === type ? 'default' : 'ghost'}
+                                                    size="sm"
+                                                    className={cn(
+                                                        "flex-1 capitalize",
+                                                        catTransactionType === type && type === 'expense' && "bg-red-500 hover:bg-red-600",
+                                                        catTransactionType === type && type === 'income' && "bg-blue-500 hover:bg-blue-600",
+                                                        catTransactionType === 'none' && type === 'none' && "bg-secondary text-secondary-foreground"
+                                                    )}
+                                                    onClick={() => setCatTransactionType(type)}
+                                                >
+                                                    {type === 'none' && t('settings.categories.typeNone')}
+                                                    {type === 'expense' && t('settings.categories.typeExpense')}
+                                                    {type === 'income' && t('settings.categories.typeIncome')}
+                                                </Button>
+                                            ))}
                                         </div>
                                     </div>
                                 </div>

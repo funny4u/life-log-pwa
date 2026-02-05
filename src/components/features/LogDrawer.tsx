@@ -30,7 +30,8 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
     const [date, setDate] = useState<Date | undefined>(new Date());
     const [endDate, setEndDate] = useState<Date | undefined>(undefined);
     const [title, setTitle] = useState('');
-    const [amount, setAmount] = useState('');
+    const [amountStr, setAmountStr] = useState('');
+    const [sign, setSign] = useState(1);
     const [category, setCategory] = useState('');
     const [startTime, setStartTime] = useState('');
     const [endTime, setEndTime] = useState('');
@@ -63,7 +64,9 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
 
             setDate(parseLocal(selectedLog.date));
             setTitle(selectedLog.title);
-            setAmount(selectedLog.amount?.toString() || '');
+            const val = selectedLog.amount;
+            setAmountStr(val ? Math.abs(val).toString() : '');
+            setSign(val && val < 0 ? -1 : 1);
             setCategory(selectedLog.category);
             setStartTime(selectedLog.start_time || '');
             setEndTime(selectedLog.end_time || '');
@@ -77,7 +80,7 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
             // Reset if adding new
             setDate(new Date());
             setTitle('');
-            setAmount('');
+            setAmountStr('');
 
             // Auto-select default category
             const defaultCat = categoriesList.find(c => c.is_default);
@@ -92,6 +95,18 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
             setImageUrlInput('');
         }
     }, [selectedLog, open, categoriesList]);
+
+    // Apply Default Transaction Type on Category Change
+    React.useEffect(() => {
+        if (selectedLog && selectedLog.category === category) return; // Don't override existing log's original sign
+
+        const catDef = categoriesList.find(c => c.name === category);
+        if (catDef?.default_transaction_type === 'expense') {
+            setSign(-1);
+        } else if (catDef?.default_transaction_type === 'income') {
+            setSign(1);
+        }
+    }, [category]);
 
     const handleDelete = async () => {
         if (!selectedLog) return;
@@ -124,7 +139,7 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
                 date: format(date, 'yyyy-MM-dd'),
                 title,
                 category: category as LogCategory,
-                amount: amount ? parseFloat(amount) : null,
+                amount: amountStr ? parseFloat(amountStr) * sign : null,
                 memo: memo || null,
                 status: finalStatus as any,
                 image_url: imageUrl,
@@ -137,7 +152,8 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
 
             // Reset form & Close
             setTitle('');
-            setAmount('');
+            setAmountStr('');
+            setSign(1);
             setMemo('');
             setCategory('');
             setEmoji('📅');
@@ -174,7 +190,7 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
                     date: format(date, 'yyyy-MM-dd'),
                     title,
                     category: category as LogCategory,
-                    amount: amount ? parseFloat(amount) : null,
+                    amount: amountStr ? parseFloat(amountStr) * sign : null,
                     memo: memo || null,
                     status: finalStatus as any,
                     image_url: imageUrl,
@@ -190,7 +206,7 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
                     date: format(date, 'yyyy-MM-dd'),
                     title,
                     category: category as LogCategory,
-                    amount: amount ? parseFloat(amount) : null,
+                    amount: amountStr ? parseFloat(amountStr) * sign : null,
                     memo: memo || null,
                     status: finalStatus as any,
                     image_url: imageUrl,
@@ -229,7 +245,8 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
 
             // Reset form
             setTitle('');
-            setAmount('');
+            setAmountStr('');
+            setSign(1);
             setMemo('');
             setCategory('');
             setEmoji('📅');
@@ -397,14 +414,37 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
                                 return (
                                     <div key="amount" className="grid gap-2">
                                         <Label htmlFor="amount">{t('fields.amount')}</Label>
-                                        <Input
-                                            id="amount"
-                                            type="number"
-                                            value={amount}
-                                            onChange={(e) => setAmount(e.target.value)}
-                                            placeholder="0.00"
-                                            inputMode="decimal"
-                                        />
+                                        <div className="flex gap-2">
+                                            <div className="flex bg-muted rounded-md p-1 shrink-0">
+                                                <Button
+                                                    type="button"
+                                                    variant={sign === 1 ? 'default' : 'ghost'}
+                                                    size="sm"
+                                                    className={cn("h-8 w-8 p-0 text-lg font-bold", sign === 1 && "bg-blue-500 hover:bg-blue-600")}
+                                                    onClick={() => setSign(1)}
+                                                >
+                                                    +
+                                                </Button>
+                                                <Button
+                                                    type="button"
+                                                    variant={sign === -1 ? 'default' : 'ghost'}
+                                                    size="sm"
+                                                    className={cn("h-8 w-8 p-0 text-lg font-bold", sign === -1 && "bg-red-500 hover:bg-red-600")}
+                                                    onClick={() => setSign(-1)}
+                                                >
+                                                    -
+                                                </Button>
+                                            </div>
+                                            <Input
+                                                id="amount"
+                                                type="number"
+                                                value={amountStr}
+                                                onChange={(e) => setAmountStr(e.target.value)}
+                                                placeholder="0.00"
+                                                inputMode="decimal"
+                                                className="flex-1 text-lg font-medium"
+                                            />
+                                        </div>
                                     </div>
                                 );
                             }

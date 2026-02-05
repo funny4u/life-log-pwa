@@ -70,7 +70,7 @@ export function KanbanView({ logs, categoryMap }: KanbanViewProps) {
     };
 
     return (
-        <div className="flex h-full overflow-x-auto gap-4 p-4 pb-24 snap-x snap-mandatory">
+        <div className="flex h-full max-w-[100vw] overflow-x-auto gap-4 p-4 pb-24 snap-x snap-mandatory">
             {/* Backlog Column */}
             <div className="flex-none w-[80vw] md:w-80 flex flex-col gap-3 snap-center">
                 <div className="flex items-center justify-between bg-muted/50 p-2 rounded-lg sticky top-0">
