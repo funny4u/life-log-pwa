@@ -241,10 +241,19 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
 
                             // Check if sharing files is supported
                             if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                                // Clipboard Strategy for Instagram Stories
+                                try {
+                                    await navigator.clipboard.writeText(shareText);
+                                    // Optional: specific message for the user
+                                    alert("Text copied! Paste it in Instagram.");
+                                } catch (clipboardError) {
+                                    console.warn('Clipboard write failed', clipboardError);
+                                }
+
                                 shareData = {
                                     files: [file],
                                     title: title,
-                                    text: shareText,
+                                    // Intentionally omit text/url to force image-only share (better for Stories)
                                 };
                             } else {
                                 // Fallback to URL if file sharing not supported
