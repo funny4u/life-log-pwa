@@ -234,8 +234,11 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
 
                     if (imageUrlInput) {
                         try {
-                            // Try to fetch the image to share as a file
-                            const response = await fetch(imageUrlInput);
+                            // Try to fetch the image via proxy to avoid CORS
+                            const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(imageUrlInput)}`;
+                            const response = await fetch(proxyUrl);
+                            if (!response.ok) throw new Error('Proxy fetch failed');
+
                             const blob = await response.blob();
                             const file = new File([blob], "log-image.jpg", { type: blob.type });
 
