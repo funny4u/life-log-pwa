@@ -286,3 +286,24 @@ export async function bulkDeleteLogs(ids: string[]) {
     revalidatePath('/calendar');
     revalidatePath('/stats');
 }
+
+export async function getUpcomingNotifications() {
+    const supabase = createClient();
+    const now = new Date().toISOString();
+
+    // Fetch logs with notification_time > now
+    // Limit to reasonable amount
+    const { data, error } = await supabase
+        .from('logs')
+        .select('*')
+        .gt('notification_time', now)
+        .order('notification_time', { ascending: true })
+        .limit(20);
+
+    if (error) {
+        console.error('Error fetching notifications:', error);
+        return [];
+    }
+
+    return data as Log[];
+}

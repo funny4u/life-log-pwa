@@ -49,6 +49,7 @@ const STANDARD_FIELDS = [
     { id: 'image_url', label: 'Image', icon: '📷' },
     { id: 'share', label: 'Share', icon: '📤' },
     { id: 'status', label: 'Status', icon: '🔖' },
+    { id: 'notification_time', label: 'Notification', icon: '🔔' },
 ];
 
 const PRESET_COLORS = [

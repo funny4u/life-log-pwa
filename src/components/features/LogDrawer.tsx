@@ -39,6 +39,7 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
     const [emoji, setEmoji] = useState('📅'); // Default emoji
     const [status, setStatus] = useState<string>('Pending');
     const [imageUrlInput, setImageUrlInput] = useState('');
+    const [notificationTime, setNotificationTime] = useState<Date | undefined>(undefined);
 
     // Dynamic Fields & Categories State
     const [customFields, setCustomFields] = useState<FieldDefinition[]>([]);
@@ -75,6 +76,7 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
             setEmoji(selectedLog.emoji || '📅');
             setStatus(selectedLog.status || 'Planned'); // Default to Planned if missing in valid log
             setImageUrlInput(selectedLog.image_url || '');
+            setNotificationTime(selectedLog.notification_time ? new Date(selectedLog.notification_time) : undefined);
             setCustomData(selectedLog.custom_data || {});
         } else {
             // Reset if adding new
@@ -94,6 +96,7 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
             setStatus('Pending'); // Default for new log
             setCustomData({});
             setImageUrlInput('');
+            setNotificationTime(undefined);
         }
     }, [selectedLog, open, categoriesList]);
 
@@ -152,6 +155,7 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
                 start_time: startTime || null,
                 end_time: endTime || null,
                 end_date: finalEndDate,
+                notification_time: notificationTime ? notificationTime.toISOString() : null,
                 custom_data: customData,
             });
 
@@ -166,6 +170,7 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
             setEndTime('');
             setImageUrlInput('');
             setDate(new Date());
+            setNotificationTime(undefined);
 
             onOpenChange(false);
         } catch (error) {
@@ -184,7 +189,6 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
             const imageUrl = imageUrlInput || null;
 
             // Determine status logic based on visibility
-            // Determine status logic based on visibility
             const currentCatDef = categoriesList.find(c => c.name === category);
             const visibleFields = currentCatDef?.settings?.visible_fields || [];
             const isStatusVisible = visibleFields.includes('status');
@@ -193,39 +197,28 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
             const finalStatus = isStatusVisible ? status : (endDate ? 'Completed' : 'Planned');
             const finalEndDate = (isEndDateVisible && endDate) ? format(endDate, 'yyyy-MM-dd') : null;
 
+            const payload = {
+                date: format(date, 'yyyy-MM-dd'),
+                title,
+                category: category as LogCategory,
+                amount: amountStr ? parseFloat(amountStr) * sign : null,
+                memo: memo || null,
+                status: finalStatus as any,
+                image_url: imageUrl,
+                emoji,
+                start_time: startTime || null,
+                end_time: endTime || null,
+                end_date: finalEndDate,
+                notification_time: notificationTime ? notificationTime.toISOString() : null,
+                custom_data: customData,
+            };
 
             if (selectedLog) {
                 // Update
-                await updateLog(selectedLog.id, {
-                    date: format(date, 'yyyy-MM-dd'),
-                    title,
-                    category: category as LogCategory,
-                    amount: amountStr ? parseFloat(amountStr) * sign : null,
-                    memo: memo || null,
-                    status: finalStatus as any,
-                    image_url: imageUrl,
-                    emoji,
-                    start_time: startTime || null,
-                    end_time: endTime || null,
-                    end_date: finalEndDate,
-                    custom_data: customData,
-                });
+                await updateLog(selectedLog.id, payload);
             } else {
                 // Create
-                await createLog({
-                    date: format(date, 'yyyy-MM-dd'),
-                    title,
-                    category: category as LogCategory,
-                    amount: amountStr ? parseFloat(amountStr) * sign : null,
-                    memo: memo || null,
-                    status: finalStatus as any,
-                    image_url: imageUrl,
-                    emoji,
-                    start_time: startTime || null,
-                    end_time: endTime || null,
-                    end_date: finalEndDate,
-                    custom_data: customData,
-                });
+                await createLog(payload);
             }
 
             // Share Logic
@@ -409,6 +402,59 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
                                             value={startTime}
                                             onChange={(e) => setStartTime(e.target.value)}
                                         />
+                                    </div>
+                                );
+                            }
+                            if (fieldId === 'notification_time') {
+                                return (
+                                    <div key="notification_time" className="grid gap-2">
+                                        <div className="flex items-center justify-between">
+                                            <Label htmlFor="notification_time" className="flex items-center gap-2">
+                                                <span>{t('fields.notification_time')}</span>
+                                                {notificationTime && (
+                                                    <span className="text-xs text-muted-foreground font-normal">
+                                                        {format(notificationTime, "MMM d, p")}
+                                                    </span>
+                                                )}
+                                            </Label>
+                                            {notificationTime && (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
+                                                    onClick={() => setNotificationTime(undefined)}
+                                                >
+                                                    <X className="w-3 h-3" />
+                                                </Button>
+                                            )}
+                                        </div>
+                                        <div className="flex gap-2 items-center">
+                                            <Switch
+                                                checked={!!notificationTime}
+                                                onCheckedChange={(checked) => {
+                                                    if (checked) {
+                                                        const now = new Date();
+                                                        // Default to next hour
+                                                        now.setMinutes(0, 0, 0);
+                                                        now.setHours(now.getHours() + 1);
+                                                        setNotificationTime(now);
+                                                    } else {
+                                                        setNotificationTime(undefined);
+                                                    }
+                                                }}
+                                            />
+                                            {notificationTime && (
+                                                <Input
+                                                    type="datetime-local"
+                                                    value={format(notificationTime, "yyyy-MM-dd'T'HH:mm")}
+                                                    onChange={(e) => {
+                                                        const val = e.target.value;
+                                                        if (val) setNotificationTime(new Date(val));
+                                                    }}
+                                                    className="flex-1"
+                                                />
+                                            )}
+                                        </div>
                                     </div>
                                 );
                             }
