@@ -455,6 +455,29 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
                                                 />
                                             )}
                                         </div>
+                                        {notificationTime && (
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="w-full mt-2 gap-2 text-blue-600 border-blue-200 hover:bg-blue-50"
+                                                onClick={() => {
+                                                    if (!notificationTime || !title) {
+                                                        alert(t('actions.fillRequired'));
+                                                        return;
+                                                    }
+                                                    const startDate = notificationTime;
+                                                    const endDate = new Date(startDate.getTime() + 60 * 60 * 1000); // Default 1 hour
+                                                    const formatDate = (date: Date) => date.toISOString().replace(/-|:|\.\d+/g, '');
+
+                                                    const details = encodeURIComponent(`${memo || ''}\n\nVia LifeLog`);
+                                                    const url = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&details=${details}&dates=${formatDate(startDate)}/${formatDate(endDate)}`;
+                                                    window.open(url, '_blank');
+                                                }}
+                                            >
+                                                <CalendarIcon className="w-4 h-4" />
+                                                <span>Add to Google Calendar</span>
+                                            </Button>
+                                        )}
                                     </div>
                                 );
                             }

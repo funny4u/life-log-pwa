@@ -37,6 +37,7 @@ export const translations = {
             saveLog: 'Save Log',
             updateLog: 'Update Log',
             saveAsCopy: 'Save Copy',
+            addToGoogleCalendar: 'Add to Google Calendar',
         },
         settings: {
             title: 'Settings',
@@ -200,6 +201,7 @@ export const translations = {
             saveLog: '로그 저장',
             updateLog: '로그 업데이트',
             saveAsCopy: '복제 저장',
+            addToGoogleCalendar: '구글 캘린더에 추가',
         },
         settings: {
             title: '설정',
