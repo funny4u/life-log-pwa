@@ -39,6 +39,8 @@ export function KanbanView({ logs, categoryMap }: KanbanViewProps) {
         return cols;
     }, [logs]);
 
+    const [activeTab, setActiveTab] = React.useState<'backlog' | 'planned' | 'completed'>('backlog');
+
     const renderCard = (log: Log) => {
         const category = categoryMap[log.category];
 
@@ -70,46 +72,102 @@ export function KanbanView({ logs, categoryMap }: KanbanViewProps) {
     };
 
     return (
-        <div className="flex h-full max-w-[100vw] overflow-x-auto gap-4 p-4 pb-24 snap-x snap-mandatory">
-            {/* Backlog Column */}
-            <div className="flex-none w-[80vw] md:w-80 flex flex-col gap-3 snap-center">
-                <div className="flex items-center justify-between bg-muted/50 p-2 rounded-lg sticky top-0">
-                    <div className="flex items-center gap-2">
-                        <Circle className="w-4 h-4 text-muted-foreground" />
-                        <span className="font-medium text-sm">{t('maintenance.backlog')}</span>
-                    </div>
-                    <Badge variant="secondary" className="text-xs">{columns.backlog.length}</Badge>
-                </div>
-                <div className="flex flex-col gap-3 overflow-y-auto min-h-0 pb-4">
-                    {columns.backlog.map(renderCard)}
-                </div>
+        <div className="flex flex-col h-full max-w-[100vw]">
+            {/* Mobile Tabs */}
+            <div className="flex md:hidden p-3 gap-2 bg-background/95 backdrop-blur z-10 sticky top-0 border-b">
+                {(['backlog', 'planned', 'completed'] as const).map(tab => {
+                    const isActive = activeTab === tab;
+                    let count = 0;
+                    let label = '';
+                    let activeClass = ''; // Explicit highlighting for active state
+
+                    if (tab === 'backlog') {
+                        count = columns.backlog.length;
+                        label = t('maintenance.backlog');
+                        activeClass = 'bg-secondary text-secondary-foreground';
+                    } else if (tab === 'planned') {
+                        count = columns.planned.length;
+                        label = t('maintenance.planned');
+                        activeClass = 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-200';
+                    } else {
+                        count = columns.completed.length;
+                        label = t('maintenance.completed');
+                        activeClass = 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-200';
+                    }
+
+                    return (
+                        <button
+                            key={tab}
+                            onClick={() => setActiveTab(tab)}
+                            className={cn(
+                                "flex-1 py-2 px-1 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2",
+                                isActive
+                                    ? cn("shadow-sm", activeClass)
+                                    : "bg-muted/50 text-muted-foreground hover:bg-muted"
+                            )}
+                        >
+                            <span>{label}</span>
+                            <Badge variant="secondary" className="px-1.5 h-5 min-w-[1.25rem] text-[10px] bg-background/50">
+                                {count}
+                            </Badge>
+                        </button>
+                    )
+                })}
             </div>
 
-            {/* Planned Column */}
-            <div className="flex-none w-[80vw] md:w-80 flex flex-col gap-3 snap-center">
-                <div className="flex items-center justify-between bg-blue-50/50 p-2 rounded-lg sticky top-0">
-                    <div className="flex items-center gap-2">
-                        <Clock className="w-4 h-4 text-blue-500" />
-                        <span className="font-medium text-sm">{t('maintenance.planned')}</span>
+            {/* Columns Container */}
+            <div className="flex-1 flex flex-col md:flex-row h-full overflow-hidden">
+                {/* Backlog Column */}
+                <div className={cn(
+                    "flex-1 flex flex-col gap-3 p-4 min-h-0", // base styles
+                    "md:border-r", // desktop separator
+                    activeTab === 'backlog' ? "flex" : "hidden md:flex" // visibility logic
+                )}>
+                    <div className="flex items-center justify-between bg-muted/50 p-2 rounded-lg sticky top-0 z-10">
+                        <div className="flex items-center gap-2">
+                            <Circle className="w-4 h-4 text-muted-foreground" />
+                            <span className="font-medium text-sm">{t('maintenance.backlog')}</span>
+                        </div>
+                        <Badge variant="secondary" className="text-xs">{columns.backlog.length}</Badge>
                     </div>
-                    <Badge variant="secondary" className="text-xs">{columns.planned.length}</Badge>
+                    <div className="flex flex-col gap-3 overflow-y-auto min-h-0 pb-24 md:pb-4 scrollbar-hide">
+                        {columns.backlog.map(renderCard)}
+                    </div>
                 </div>
-                <div className="flex flex-col gap-3 overflow-y-auto min-h-0 pb-4">
-                    {columns.planned.map(renderCard)}
-                </div>
-            </div>
 
-            {/* Completed Column */}
-            <div className="flex-none w-[80vw] md:w-80 flex flex-col gap-3 snap-center">
-                <div className="flex items-center justify-between bg-green-50/50 p-2 rounded-lg sticky top-0">
-                    <div className="flex items-center gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-green-500" />
-                        <span className="font-medium text-sm">{t('maintenance.completed')}</span>
+                {/* Planned Column */}
+                <div className={cn(
+                    "flex-1 flex flex-col gap-3 p-4 min-h-0",
+                    "md:border-r",
+                    activeTab === 'planned' ? "flex" : "hidden md:flex"
+                )}>
+                    <div className="flex items-center justify-between bg-blue-50 p-2 rounded-lg sticky top-0 z-10 dark:bg-blue-900/20">
+                        <div className="flex items-center gap-2">
+                            <Clock className="w-4 h-4 text-blue-500" />
+                            <span className="font-medium text-sm">{t('maintenance.planned')}</span>
+                        </div>
+                        <Badge variant="secondary" className="text-xs">{columns.planned.length}</Badge>
                     </div>
-                    <Badge variant="secondary" className="text-xs">{columns.completed.length}</Badge>
+                    <div className="flex flex-col gap-3 overflow-y-auto min-h-0 pb-24 md:pb-4 scrollbar-hide">
+                        {columns.planned.map(renderCard)}
+                    </div>
                 </div>
-                <div className="flex flex-col gap-3 overflow-y-auto min-h-0 pb-4">
-                    {columns.completed.map(renderCard)}
+
+                {/* Completed Column */}
+                <div className={cn(
+                    "flex-1 flex flex-col gap-3 p-4 min-h-0",
+                    activeTab === 'completed' ? "flex" : "hidden md:flex"
+                )}>
+                    <div className="flex items-center justify-between bg-green-50 p-2 rounded-lg sticky top-0 z-10 dark:bg-green-900/20">
+                        <div className="flex items-center gap-2">
+                            <CheckCircle2 className="w-4 h-4 text-green-500" />
+                            <span className="font-medium text-sm">{t('maintenance.completed')}</span>
+                        </div>
+                        <Badge variant="secondary" className="text-xs">{columns.completed.length}</Badge>
+                    </div>
+                    <div className="flex flex-col gap-3 overflow-y-auto min-h-0 pb-24 md:pb-4 scrollbar-hide">
+                        {columns.completed.map(renderCard)}
+                    </div>
                 </div>
             </div>
         </div>
