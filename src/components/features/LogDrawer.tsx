@@ -88,6 +88,7 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
 
             setStartTime('');
             setEndTime('');
+            setEndDate(undefined);
             setMemo('');
             setEmoji('📅');
             setStatus('Pending'); // Default for new log
@@ -131,8 +132,12 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
 
             // Determine status logic based on visibility
             const currentCatDef = categoriesList.find(c => c.name === category);
-            const isStatusVisible = currentCatDef?.settings?.visible_fields?.includes('status');
+            const visibleFields = currentCatDef?.settings?.visible_fields || [];
+            const isStatusVisible = visibleFields.includes('status');
+            const isEndDateVisible = visibleFields.includes('end_date');
+
             const finalStatus = isStatusVisible ? status : (endDate ? 'Completed' : 'Planned');
+            const finalEndDate = (isEndDateVisible && endDate) ? format(endDate, 'yyyy-MM-dd') : null;
 
             // Create new log with current form data
             await createLog({
@@ -146,7 +151,7 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
                 emoji,
                 start_time: startTime || null,
                 end_time: endTime || null,
-                end_date: endDate ? format(endDate, 'yyyy-MM-dd') : null,
+                end_date: finalEndDate,
                 custom_data: customData,
             });
 
@@ -179,9 +184,14 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
             const imageUrl = imageUrlInput || null;
 
             // Determine status logic based on visibility
+            // Determine status logic based on visibility
             const currentCatDef = categoriesList.find(c => c.name === category);
-            const isStatusVisible = currentCatDef?.settings?.visible_fields?.includes('status');
+            const visibleFields = currentCatDef?.settings?.visible_fields || [];
+            const isStatusVisible = visibleFields.includes('status');
+            const isEndDateVisible = visibleFields.includes('end_date');
+
             const finalStatus = isStatusVisible ? status : (endDate ? 'Completed' : 'Planned');
+            const finalEndDate = (isEndDateVisible && endDate) ? format(endDate, 'yyyy-MM-dd') : null;
 
 
             if (selectedLog) {
@@ -197,7 +207,7 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
                     emoji,
                     start_time: startTime || null,
                     end_time: endTime || null,
-                    end_date: endDate ? format(endDate, 'yyyy-MM-dd') : null,
+                    end_date: finalEndDate,
                     custom_data: customData,
                 });
             } else {
@@ -213,7 +223,7 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
                     emoji,
                     start_time: startTime || null,
                     end_time: endTime || null,
-                    end_date: endDate ? format(endDate, 'yyyy-MM-dd') : null,
+                    end_date: finalEndDate,
                     custom_data: customData,
                 });
             }
@@ -316,9 +326,13 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
                         return orderedIds.map(fieldId => {
                             // Standard Fields
                             if (fieldId === 'date') {
+                                // Dynamic Label Logic: If end_date is present, call this "Start Date", else just "Date"
+                                const hasEndDate = orderedIds.includes('end_date');
+                                const dateLabel = hasEndDate ? t('fields.startDate') : t('fields.date');
+
                                 return (
                                     <div key="date" className="grid gap-2">
-                                        <Label htmlFor="date">{t('fields.date')}</Label>
+                                        <Label htmlFor="date">{dateLabel}</Label>
                                         <Popover>
                                             <PopoverTrigger asChild>
                                                 <Button

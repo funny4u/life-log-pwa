@@ -39,7 +39,7 @@ import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 
 const STANDARD_FIELDS = [
-    { id: 'date', label: 'Start Date', icon: '📅' },
+    { id: 'date', label: 'Date', icon: '📅' },
     { id: 'end_date', label: 'End Date', icon: '🔚' },
     { id: 'time', label: 'Time', icon: '⏰' },
     { id: 'amount', label: 'Amount ($)', icon: '💰' },
@@ -166,7 +166,6 @@ export default function SettingsPage() {
                 setCatName('');
                 setCatColor('#EF4444');
                 setCatIcon('🏷️');
-                setCatTransactionType('none');
                 setEditingId(null);
                 setIsNotificationEnabled(false);
                 setVisibleFields(STANDARD_FIELDS.map(f => f.id)); // Default all standard enabled
@@ -323,7 +322,12 @@ export default function SettingsPage() {
         // Load visible fields from settings, or default to all standard if clean
         if (cat.settings?.visible_fields) {
             // Deduplicate just in case saved data is bad
-            setVisibleFields(Array.from(new Set(cat.settings.visible_fields)));
+            const savedFields = new Set(cat.settings.visible_fields);
+            // Mandate 'date' field if missing
+            if (!savedFields.has('date')) {
+                savedFields.add('date');
+            }
+            setVisibleFields(Array.from(savedFields));
         } else {
             // If no settings (legacy), default to all standard + all active custom
             // For legacy support, we map custom fields to their IDs if possible, or keep key_name if needed
@@ -332,6 +336,9 @@ export default function SettingsPage() {
                 ...STANDARD_FIELDS.map(f => f.id),
                 ...fields.filter(f => f.is_active).map(f => f.id) // Prefer ID for custom fields
             ];
+            // Ensure date is there
+            if (!allFields.includes('date')) allFields.unshift('date');
+
             setVisibleFields(Array.from(new Set(allFields)));
         }
 

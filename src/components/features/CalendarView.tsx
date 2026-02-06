@@ -216,6 +216,16 @@ export function CalendarView({ logs, categoryMap }: CalendarViewProps) {
                                             <span>{log.category}</span>
                                         </div>
                                     </div>
+                                    {log.amount !== null && log.amount !== undefined && (
+                                        <div className="text-right px-2">
+                                            <span className={cn(
+                                                "font-semibold text-sm",
+                                                log.amount > 0 ? "text-blue-600" : "text-red-500"
+                                            )}>
+                                                {log.amount > 0 ? '+' : ''}{log.amount.toLocaleString()}
+                                            </span>
+                                        </div>
+                                    )}
                                     {log.status === 'Completed' && (
                                         <span className="text-xs text-green-600 font-medium">Done</span>
                                     )}

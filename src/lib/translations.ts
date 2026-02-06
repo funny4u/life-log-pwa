@@ -127,7 +127,8 @@ export const translations = {
             completed: 'Completed',
         },
         fields: {
-            date: 'Start Date',
+            date: 'Date',
+            startDate: 'Start Date',
             end_date: 'End Date',
             time: 'Time',
             amount: 'Amount',
@@ -287,7 +288,8 @@ export const translations = {
             completed: '완료',
         },
         fields: {
-            date: '시작 날짜',
+            date: '날짜',
+            startDate: '시작 날짜',
             end_date: '종료 날짜',
             time: '시간',
             amount: '금액',

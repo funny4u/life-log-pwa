@@ -77,8 +77,7 @@ export function JournalView({ logs, categoryMap }: JournalViewProps) {
                                 <img
                                     src={log.image_url}
                                     alt={log.title}
-                                    className="object-contain max-h-[400px] w-auto max-w-full"
-                                    style={{ maxWidth: '600px' }}
+                                    className="object-contain max-h-[300px] w-auto max-w-[300px]"
                                     onError={(e) => {
                                         (e.target as HTMLImageElement).style.display = 'none';
                                     }}
