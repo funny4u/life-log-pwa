@@ -294,7 +294,7 @@ export const translations = {
             date: '날짜',
             startDate: '시작 날짜',
             end_date: '종료 날짜',
-            notification_time: '알림 시간',
+            notification_time: '알림 일시',
             time: '시간',
             amount: '금액',
             note: '노트',
