@@ -27,7 +27,7 @@ export function JournalView({ logs, categoryMap }: JournalViewProps) {
     }
 
     return (
-        <div className="flex flex-col gap-6 p-4 pb-24 max-w-2xl mx-auto">
+        <div className="flex flex-col gap-3 p-3 pb-24 max-w-2xl mx-auto">
             {logs.map((log) => {
                 const category = categoryMap[log.category];
                 const color = category?.color || '#94A3B8';
@@ -39,14 +39,14 @@ export function JournalView({ logs, categoryMap }: JournalViewProps) {
                         className="bg-card border rounded-xl overflow-hidden shadow-sm flex flex-col"
                     >
                         {/* Header */}
-                        <div className="p-4 flex items-center justify-between">
+                        <div className="p-3 flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                                <div className="flex flex-col items-center justify-center bg-muted/30 rounded-lg p-2 min-w-[50px]">
-                                    <span className="text-xs font-bold uppercase text-muted-foreground">{format(date, 'MMM')}</span>
-                                    <span className="text-xl font-bold leading-none">{format(date, 'dd')}</span>
+                                <div className="flex flex-col items-center justify-center bg-muted/30 rounded-lg p-1.5 min-w-[45px]">
+                                    <span className="text-[10px] font-bold uppercase text-muted-foreground">{format(date, 'MMM')}</span>
+                                    <span className="text-lg font-bold leading-none">{format(date, 'dd')}</span>
                                 </div>
                                 <div className="flex flex-col">
-                                    <h3 className="font-semibold text-lg line-clamp-1">{log.title}</h3>
+                                    <h3 className="font-semibold text-base line-clamp-1">{log.title}</h3>
                                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                         <div className="flex items-center gap-1">
                                             <Clock className="w-3 h-3" />
@@ -55,7 +55,7 @@ export function JournalView({ logs, categoryMap }: JournalViewProps) {
                                         <span>•</span>
                                         <Badge
                                             variant="secondary"
-                                            className="h-5 px-1.5 font-normal text-[10px]"
+                                            className="h-4 px-1 font-normal text-[10px]"
                                             style={{ color: color, backgroundColor: `${color}15` }}
                                         >
                                             {log.category}
@@ -63,7 +63,7 @@ export function JournalView({ logs, categoryMap }: JournalViewProps) {
                                     </div>
                                 </div>
                             </div>
-                            <div className="text-2xl">
+                            <div className="text-2xl hidden">
                                 {log.emoji}
                             </div>
                         </div>
@@ -87,7 +87,7 @@ export function JournalView({ logs, categoryMap }: JournalViewProps) {
 
                         {/* Content */}
                         <div
-                            className="p-4 pt-3 flex flex-col gap-3 cursor-pointer"
+                            className="p-3 pt-2 flex flex-col gap-2 cursor-pointer"
                             onClick={() => openDrawer(log)}
                         >
                             {log.memo && (

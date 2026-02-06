@@ -179,7 +179,7 @@ export function CalendarView({ logs, categoryMap }: CalendarViewProps) {
             <div className="h-px bg-border my-2" />
 
             {/* Selected Date List (Enhanced for Range) */}
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-1">
                 <h3 className="font-medium text-sm text-muted-foreground">
                     {format(selectedDate, 'EEEE, MMMM do')}
                 </h3>
