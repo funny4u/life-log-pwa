@@ -240,15 +240,20 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
                             if (!response.ok) throw new Error('Proxy fetch failed');
 
                             const blob = await response.blob();
-                            const file = new File([blob], "log-image.jpg", { type: blob.type });
+                            const mimeType = blob.type;
+                            let extension = 'jpg';
+                            if (mimeType === 'image/png') extension = 'png';
+                            else if (mimeType === 'image/webp') extension = 'webp';
+                            else if (mimeType === 'image/gif') extension = 'gif';
+
+                            const fileName = `log-image.${extension}`;
+                            const file = new File([blob], fileName, { type: mimeType });
 
                             // Check if sharing files is supported
                             if (navigator.canShare && navigator.canShare({ files: [file] })) {
                                 // Clipboard Strategy for Instagram Stories
                                 try {
                                     await navigator.clipboard.writeText(shareText);
-                                    // Optional: specific message for the user
-                                    alert("Text copied! Paste it in Instagram.");
                                 } catch (clipboardError) {
                                     console.warn('Clipboard write failed', clipboardError);
                                 }
@@ -256,7 +261,6 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
                                 shareData = {
                                     files: [file],
                                     title: title,
-                                    // Intentionally omit text/url to force image-only share (better for Stories)
                                 };
                             } else {
                                 // Fallback to URL if file sharing not supported
@@ -269,6 +273,7 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
                     }
 
                     await navigator.share(shareData);
+                    alert("Text copied! Paste it in your story.");
                 } catch (shareError) {
                     console.log('Share cancelled or failed', shareError);
                 }
