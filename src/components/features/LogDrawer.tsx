@@ -226,17 +226,33 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
 
             if (shouldShare && typeof navigator !== 'undefined' && navigator.share) {
                 try {
-                    const shareData: ShareData = {
+                    const shareText = `${title}\n${memo ? '\n' + memo : ''}\n\nVia LifeLog`;
+                    let shareData: ShareData = {
                         title: title,
-                        text: `${title}\n${memo ? '\n' + memo : ''}\n\nVia LifeLog`,
+                        text: shareText,
                     };
 
                     if (imageUrlInput) {
                         try {
-                            // Could share URL, but standard share might just be text
-                            // shareData.url = imageUrlInput; 
+                            // Try to fetch the image to share as a file
+                            const response = await fetch(imageUrlInput);
+                            const blob = await response.blob();
+                            const file = new File([blob], "log-image.jpg", { type: blob.type });
+
+                            // Check if sharing files is supported
+                            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                                shareData = {
+                                    files: [file],
+                                    title: title,
+                                    text: shareText,
+                                };
+                            } else {
+                                // Fallback to URL if file sharing not supported
+                                shareData.url = imageUrlInput;
+                            }
                         } catch (e) {
-                            console.warn('Share setup failed', e);
+                            console.warn('Image fetch for share failed (likely CORS), falling back to URL', e);
+                            shareData.url = imageUrlInput;
                         }
                     }
 
