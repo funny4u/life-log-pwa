@@ -149,6 +149,15 @@ export default function SettingsPage() {
 
     const [isSaving, setIsSaving] = useState(false);
 
+    // Journal Settings State
+    const [tempThumbnailSize, setTempThumbnailSize] = useState('150');
+
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            setTempThumbnailSize(localStorage.getItem('journal_thumbnail_size') || '150');
+        }
+    }, []);
+
     useEffect(() => {
         loadData();
     }, []);
@@ -425,6 +434,7 @@ export default function SettingsPage() {
                         </Button>
                     </div>
                 </div>
+                <div className="border-b border-dashed border-border" />
 
                 {/* Categories Section */}
                 <div className="space-y-4">
@@ -490,7 +500,42 @@ export default function SettingsPage() {
                         ))}
                     </div>
                 </div>
+
+                <div className="border-b border-dashed border-border" />
+
+                {/* Journal Settings Section */}
+                <div className="space-y-4">
+                    <div className="px-1">
+                        <h3 className="font-semibold text-lg">Journal Settings</h3>
+                        <p className="text-sm text-muted-foreground">Customize the appearance of the Journal View.</p>
+                    </div>
+                    <div className="p-4 bg-card border rounded-xl space-y-3">
+                        <label className="text-sm font-medium">Max Thumbnail Size (px)</label>
+                        <div className="flex items-center gap-3">
+
+                            <Input
+                                type="number"
+                                value={tempThumbnailSize}
+                                onChange={(e) => setTempThumbnailSize(e.target.value)}
+                                className="max-w-[120px]"
+                            />
+                            <span className="text-sm text-muted-foreground mr-auto">px</span>
+
+                            <Button
+                                size="sm"
+                                variant="secondary"
+                                onClick={() => {
+                                    localStorage.setItem('journal_thumbnail_size', tempThumbnailSize);
+                                    window.dispatchEvent(new Event('storage'));
+                                }}
+                            >
+                                {t ? t('actions.apply') || 'Apply' : 'Apply'}
+                            </Button>
+                        </div>
+                    </div>
+                </div>
             </div>
+
 
             {/* Create/Edit Sheet */}
             <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>

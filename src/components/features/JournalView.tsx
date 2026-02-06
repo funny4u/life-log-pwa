@@ -17,6 +17,26 @@ interface JournalViewProps {
 export function JournalView({ logs, categoryMap }: JournalViewProps) {
     const { openDrawer } = useLogContext();
     const { t } = useLanguage();
+    const [thumbnailSize, setThumbnailSize] = React.useState(150);
+
+    React.useEffect(() => {
+        // Initial load
+        const loadSize = () => {
+            const saved = localStorage.getItem('journal_thumbnail_size');
+            if (saved) {
+                const parsed = parseInt(saved, 10);
+                if (!isNaN(parsed) && parsed > 0) {
+                    setThumbnailSize(parsed);
+                }
+            }
+        };
+        loadSize();
+
+        // Listen for changes (from same window or other tabs)
+        const handleStorage = () => loadSize();
+        window.addEventListener('storage', handleStorage);
+        return () => window.removeEventListener('storage', handleStorage);
+    }, []);
 
     if (logs.length === 0) {
         return (
@@ -77,7 +97,11 @@ export function JournalView({ logs, categoryMap }: JournalViewProps) {
                                 <img
                                     src={log.image_url}
                                     alt={log.title}
-                                    className="object-contain max-h-[300px] w-auto max-w-[300px]"
+                                    className="object-contain w-auto"
+                                    style={{
+                                        maxHeight: `${thumbnailSize}px`,
+                                        maxWidth: `${thumbnailSize}px`
+                                    }}
                                     onError={(e) => {
                                         (e.target as HTMLImageElement).style.display = 'none';
                                     }}
