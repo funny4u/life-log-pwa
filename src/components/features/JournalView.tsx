@@ -32,10 +32,17 @@ export function JournalView({ logs, categoryMap }: JournalViewProps) {
         };
         loadSize();
 
-        // Listen for changes (from same window or other tabs)
+        // Listen for changes
         const handleStorage = () => loadSize();
         window.addEventListener('storage', handleStorage);
-        return () => window.removeEventListener('storage', handleStorage);
+        window.addEventListener('journal-settings-changed', handleStorage);
+        window.addEventListener('focus', handleStorage);
+
+        return () => {
+            window.removeEventListener('storage', handleStorage);
+            window.removeEventListener('journal-settings-changed', handleStorage);
+            window.removeEventListener('focus', handleStorage);
+        };
     }, []);
 
     if (logs.length === 0) {

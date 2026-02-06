@@ -1,5 +1,7 @@
 "use client";
 
+import { ApplyButton } from './ApplyButton';
+
 import React, { useEffect, useState } from 'react';
 import { TopBar } from '@/components/layout/TopBar';
 import { FieldDefinition, FieldType, Category } from '@/lib/types';
@@ -513,24 +515,17 @@ export default function SettingsPage() {
                         <label className="text-sm font-medium">Max Thumbnail Size (px)</label>
                         <div className="flex items-center gap-3">
 
-                            <Input
-                                type="number"
-                                value={tempThumbnailSize}
-                                onChange={(e) => setTempThumbnailSize(e.target.value)}
-                                className="max-w-[120px]"
-                            />
-                            <span className="text-sm text-muted-foreground mr-auto">px</span>
+                            <div className="flex items-center gap-3">
+                                <Input
+                                    type="number"
+                                    value={tempThumbnailSize}
+                                    onChange={(e) => setTempThumbnailSize(e.target.value)}
+                                    className="max-w-[120px]"
+                                />
+                                <span className="text-sm text-muted-foreground mr-auto">px</span>
 
-                            <Button
-                                size="sm"
-                                variant="secondary"
-                                onClick={() => {
-                                    localStorage.setItem('journal_thumbnail_size', tempThumbnailSize);
-                                    window.dispatchEvent(new Event('storage'));
-                                }}
-                            >
-                                {t ? t('actions.apply') || 'Apply' : 'Apply'}
-                            </Button>
+                                <ApplyButton t={t} tempThumbnailSize={tempThumbnailSize} />
+                            </div>
                         </div>
                     </div>
                 </div>
