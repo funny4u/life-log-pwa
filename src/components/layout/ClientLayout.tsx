@@ -9,37 +9,31 @@ import { LogProvider, useLogContext } from '@/components/providers/LogProvider';
 import { LayoutProvider } from '@/components/providers/LayoutProvider';
 import { Sidebar } from './Sidebar';
 import { NotificationManager } from '../features/NotificationManager';
+import { cn } from '@/lib/utils';
 
 function ClientLayoutContent({ children }: { children: React.ReactNode }) {
     const [mounted, setMounted] = React.useState(false);
     const { isDrawerOpen, closeDrawer } = useLogContext();
+    const pathname = usePathname();
 
     React.useEffect(() => {
         setMounted(true);
     }, []);
-    const pathname = usePathname();
-    const isAuthPage = pathname?.startsWith('/login') || pathname?.startsWith('/auth');
 
-    if (isAuthPage) {
-        return (
-            <div className="flex flex-col h-[100dvh] w-full bg-background relative overflow-hidden">
-                <NotificationManager />
-                <main className="flex-1 w-full min-h-0 overflow-y-auto overflow-x-hidden scroll-smooth overscroll-contain">
-                    {children}
-                </main>
-            </div>
-        );
-    }
+    // Robust check for auth-related pages (login, signup, callback etc)
+    const isAuthPage = pathname ? /^\/(login|auth|signup)/.test(pathname) : false;
 
     return (
         <div className="flex flex-col h-[100dvh] w-full bg-background relative overflow-hidden">
             <NotificationManager />
-            <main className="flex-1 w-full min-h-0 overflow-y-auto overflow-x-hidden pb-24 scroll-smooth overscroll-contain">
-                {/* pb-24 ensures content isn't hidden behind BottomNav */}
+            <main className={cn(
+                "flex-1 w-full min-h-0 overflow-y-auto overflow-x-hidden scroll-smooth overscroll-contain",
+                !isAuthPage && "pb-24"
+            )}>
                 {children}
             </main>
 
-            {mounted && (
+            {mounted && !isAuthPage && (
                 <>
                     <LogDrawer open={isDrawerOpen} onOpenChange={(open) => !open && closeDrawer()} />
                     <BottomNav />

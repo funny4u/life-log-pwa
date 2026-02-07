@@ -24,6 +24,9 @@ export function BottomNav() {
         { label: t('nav.settings'), icon: Settings, href: '/settings', action: () => router.push('/settings') },
     ];
 
+    const isAuthPage = pathname ? /^\/(login|auth|signup)/.test(pathname) : false;
+    if (isAuthPage) return null;
+
     return (
         <div className="fixed bottom-0 w-full bg-background/80 backdrop-blur-md border-t z-50 pb-safe shadow-[0_-1px_10px_rgba(0,0,0,0.05)]">
             <div className="flex justify-between items-center h-14 px-2 max-w-md mx-auto">
