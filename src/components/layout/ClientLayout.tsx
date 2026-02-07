@@ -18,7 +18,14 @@ function ClientLayoutContent({ children }: { children: React.ReactNode }) {
 
     React.useEffect(() => {
         setMounted(true);
-    }, []);
+        console.log('ClientLayout mounted. Path:', pathname);
+        // Force SW update if available
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.ready.then(registration => {
+                registration.update();
+            });
+        }
+    }, [pathname]);
 
     // Robust check for auth-related pages (login, signup, callback etc)
     const isAuthPage = pathname ? /^\/(login|auth|signup)/.test(pathname) : false;
