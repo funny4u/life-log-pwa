@@ -5,7 +5,8 @@ import { ApplyButton } from './ApplyButton';
 import React, { useEffect, useState } from 'react';
 import { TopBar } from '@/components/layout/TopBar';
 import { FieldDefinition, FieldType, Category } from '@/lib/types';
-import { getFieldDefinitions, createFieldDefinition, updateFieldDefinition, deleteFieldDefinition, getCategories, createCategory, updateCategory, deleteCategory, setDefaultCategory } from '@/app/actions';
+import { getFieldDefinitions, createFieldDefinition, updateFieldDefinition, deleteFieldDefinition, getCategories, createCategory, updateCategory, deleteCategory, setDefaultCategory, reorderCategories, updateProfile, resetUserData } from '@/app/actions';
+import { createClient } from '@/lib/supabase/client';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,7 +29,7 @@ import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, us
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Trash2, GripVertical, Check, Pencil, Type, Hash, Clock, CheckSquare, ChevronsUpDown, Calendar, Link, Mail, Phone, Percent, DollarSign, Timer, Star, ScanBarcode, Users, File, Search } from 'lucide-react';
+import { Plus, Trash2, GripVertical, Check, Pencil, Type, Hash, Clock, CheckSquare, ChevronsUpDown, Calendar, Link, Mail, Phone, Percent, DollarSign, Timer, Star, ScanBarcode, Users, File, Search, Grip, ListTodo } from 'lucide-react';
 // ... existing code ...
 import {
     Sheet,
@@ -68,7 +69,7 @@ const FIELD_TYPES = [
     { value: 'duration', label: 'Duration', icon: Timer, description: 'Length of time' },
     { value: 'boolean', label: 'Checkbox', icon: CheckSquare, description: 'Yes/No toggle' },
     { value: 'select', label: 'Single select', icon: GripVertical, description: 'Choose one from a list' },
-    // { value: 'multiselect', label: 'Multiple select', icon: Menu, description: 'Choose multiple from a list' },
+    { value: 'multiselect', label: 'Multiple select', icon: ListTodo, description: 'Choose multiple from a list' },
     { value: 'url', label: 'URL', icon: Link, description: 'Web link' },
     { value: 'email', label: 'Email', icon: Mail, description: 'Email address' },
     { value: 'phone', label: 'Phone number', icon: Phone, description: 'Telephone number' },
@@ -122,6 +123,67 @@ function SortableFieldRow({ id, field, isCustom, toggleVisible }: SortableFieldR
         </div>
     );
 }
+interface SortableCategoryRowProps {
+    category: Category;
+    onEdit: (cat: Category) => void;
+    onDelete: (id: string) => void;
+    onSetDefault: (id: string) => void;
+}
+
+function SortableCategoryRow({ category, onEdit, onDelete, onSetDefault }: SortableCategoryRowProps) {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+    } = useSortable({ id: category.id });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        touchAction: 'none'
+    };
+
+    return (
+        <div ref={setNodeRef} style={style} className="flex items-center gap-3 p-3 rounded-xl border bg-card shadow-sm cursor-default hover:bg-muted/50 transition-colors">
+            <div {...attributes} {...listeners} className="cursor-move p-2 -ml-2 text-muted-foreground/30 hover:text-foreground touch-none">
+                <GripVertical className="w-5 h-5" />
+            </div>
+            <div className="w-10 h-10 rounded-full flex items-center justify-center text-xl shadow-sm border border-border/50 flex-shrink-0" style={{ backgroundColor: category.color }} onClick={() => onEdit(category)}>
+                {category.icon || '🏷️'}
+            </div>
+            <div className="flex-1 min-w-0" onClick={() => onEdit(category)}>
+                <div className="flex items-center gap-2">
+                    <h4 className="font-semibold text-base">{category.name}</h4>
+                    {category.is_default && (
+                        <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium">Default</span>
+                    )}
+                </div>
+            </div>
+            <div className="flex items-center gap-1">
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    className={cn("h-8 w-8 hover:bg-transparent", category.is_default ? "text-yellow-400 hover:text-yellow-500" : "text-muted-foreground/30 hover:text-yellow-400")}
+                    onClick={async (e) => {
+                        e.stopPropagation();
+                        if (category.is_default) return;
+                        onSetDefault(category.id);
+                    }}
+                >
+                    <Star className={cn("w-4 h-4", category.is_default && "fill-current")} />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => onEdit(category)}>
+                    <Pencil className="w-4 h-4" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={(e) => { e.stopPropagation(); onDelete(category.id); }}>
+                    <Trash2 className="w-4 h-4" />
+                </Button>
+            </div>
+        </div>
+    );
+}
 
 export default function SettingsPage() {
     const { t, language, setLanguage } = useLanguage();
@@ -140,6 +202,8 @@ export default function SettingsPage() {
 
     // Form State
     const [newLabel, setNewLabel] = useState('');
+    const [newOptions, setNewOptions] = useState('');
+
     const [newType, setNewType] = useState<FieldType>('text');
     const [catName, setCatName] = useState('');
     const [catColor, setCatColor] = useState('#EF4444');
@@ -154,6 +218,45 @@ export default function SettingsPage() {
 
     // Journal Settings State
     const [tempThumbnailSize, setTempThumbnailSize] = useState('150');
+
+    // Profile Settings State
+    const [profileTitle, setProfileTitle] = useState('');
+    const [profileTagline, setProfileTagline] = useState('');
+    const supabase = createClient();
+
+    useEffect(() => {
+        const fetchProfile = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('app_title, app_tagline')
+                    .eq('id', user.id)
+                    .single();
+
+                if (profile) {
+                    setProfileTitle(profile.app_title || 'My Life Log');
+                    setProfileTagline(profile.app_tagline || 'Keep track of everything');
+                }
+            }
+        };
+        fetchProfile();
+    }, []);
+
+    const handleSaveProfile = async () => {
+        try {
+            setIsSaving(true);
+            await updateProfile({
+                app_title: profileTitle,
+                app_tagline: profileTagline
+            });
+            // Optional: Show success toast
+        } catch (error) {
+            console.error('Failed to update profile', error);
+        } finally {
+            setIsSaving(false);
+        }
+    };
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -174,6 +277,7 @@ export default function SettingsPage() {
             setTimeout(() => {
                 setNewLabel('');
                 setNewType('text');
+                setNewOptions(''); // Reset options
                 setEditingFieldId(null);
                 setCatName('');
                 setCatColor('#EF4444');
@@ -239,7 +343,7 @@ export default function SettingsPage() {
                 key_name,
                 type: newType,
                 is_active: true,
-                options: null,
+                options: (newType === 'select') ? newOptions.split(',').map(s => s.trim()).filter(Boolean) : null,
                 enable_notification: isNotificationEnabled
             });
 
@@ -279,6 +383,7 @@ export default function SettingsPage() {
             await updateFieldDefinition(editingFieldId, {
                 label: newLabel,
                 type: newType,
+                options: (newType === 'select') ? newOptions.split(',').map(s => s.trim()).filter(Boolean) : null,
                 enable_notification: isNotificationEnabled
             });
             await loadData();
@@ -410,6 +515,33 @@ export default function SettingsPage() {
         }
     }
 
+    async function handleCategoryDragEnd(event: DragEndEvent) {
+        const { active, over } = event;
+
+        if (active.id !== over?.id) {
+            const oldIndex = categories.findIndex(i => i.id === active.id);
+            const newIndex = categories.findIndex(i => i.id === over?.id);
+            const newItems = arrayMove(categories, oldIndex, newIndex);
+
+            // Optimistic update
+            setCategories(newItems);
+
+            // Calculate new sort orders based on index * 10
+            const updates = newItems.map((item, index) => ({
+                id: item.id,
+                sort_order: (index + 1) * 10
+            }));
+
+            // Call server action
+            try {
+                await reorderCategories(updates);
+            } catch (err) {
+                console.error('Failed to reorder categories', err);
+                // Optionally revert state here if needed, but for now we keep it optimistic
+            }
+        }
+    }
+
     return (
         <div className="flex flex-col h-full w-full bg-muted/10">
             <TopBar title={t('settings.title')} />
@@ -439,6 +571,38 @@ export default function SettingsPage() {
                 </div>
                 <div className="border-b border-dashed border-border" />
 
+                {/* Profile Customization Section */}
+                <div className="space-y-4">
+                    <div className="px-1">
+                        <h3 className="font-semibold text-lg">{t('settings.profile.title')}</h3>
+                        <p className="text-sm text-muted-foreground">{t('settings.profile.description')}</p>
+                    </div>
+                    <div className="p-4 bg-card border rounded-xl space-y-4">
+                        <div className="space-y-2">
+                            <Label>{t('settings.profile.appTitle')}</Label>
+                            <Input
+                                value={profileTitle}
+                                onChange={(e) => setProfileTitle(e.target.value)}
+                                placeholder="My Life Log"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>{t('settings.profile.appTagline')}</Label>
+                            <Input
+                                value={profileTagline}
+                                onChange={(e) => setProfileTagline(e.target.value)}
+                                placeholder="Keep track of everything"
+                            />
+                        </div>
+                        <div className="flex justify-end">
+                            <Button onClick={handleSaveProfile} disabled={isSaving}>
+                                {isSaving ? t('actions.saving') : t('actions.save')}
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+                <div className="border-b border-dashed border-border" />
+
                 {/* Categories Section */}
                 <div className="space-y-4">
                     <div className="flex justify-between items-center px-1">
@@ -457,50 +621,38 @@ export default function SettingsPage() {
                     </div>
 
                     <div className="grid gap-3">
-                        {categories.map(cat => (
-                            <div key={cat.id} className="flex items-center gap-3 p-3 rounded-xl border bg-card shadow-sm cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => startEditCategory(cat)}>
-                                <div className="w-10 h-10 rounded-full flex items-center justify-center text-xl shadow-sm border border-border/50 flex-shrink-0" style={{ backgroundColor: cat.color }}>
-                                    {cat.icon || '🏷️'}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2">
-                                        <h4 className="font-semibold text-base">{cat.name}</h4>
-                                        {cat.is_default && (
-                                            <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium">{t('common.default')}</span>
-                                        )}
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className={cn("h-8 w-8 hover:bg-transparent", cat.is_default ? "text-yellow-400 hover:text-yellow-500" : "text-muted-foreground/30 hover:text-yellow-400")}
-                                        onClick={async (e) => {
-                                            e.stopPropagation();
-                                            if (cat.is_default) return; // Already default
+                        <DndContext
+                            sensors={sensors}
+                            collisionDetection={closestCenter}
+                            onDragEnd={handleCategoryDragEnd}
+                            modifiers={[]}
+                        >
+                            <SortableContext
+                                items={categories.map(c => c.id)}
+                                strategy={verticalListSortingStrategy}
+                            >
+                                {categories.map(cat => (
+                                    <SortableCategoryRow
+                                        key={cat.id}
+                                        category={cat}
+                                        onEdit={startEditCategory}
+                                        onDelete={(id) => setDeleteConfirm({ type: 'category', id })}
+                                        onSetDefault={async (id) => {
                                             try {
-                                                await setDefaultCategory(cat.id);
+                                                await setDefaultCategory(id);
                                                 // Optimistic update
                                                 setCategories(prev => prev.map(c => ({
                                                     ...c,
-                                                    is_default: c.id === cat.id
+                                                    is_default: c.id === id
                                                 })));
                                             } catch (err) {
                                                 console.error(err);
                                             }
                                         }}
-                                    >
-                                        <Star className={cn("w-4 h-4", cat.is_default && "fill-current")} />
-                                    </Button>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary">
-                                        <Pencil className="w-4 h-4" />
-                                    </Button>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={(e) => { e.stopPropagation(); setDeleteConfirm({ type: 'category', id: cat.id }); }}>
-                                        <Trash2 className="w-4 h-4" />
-                                    </Button>
-                                </div>
-                            </div>
-                        ))}
+                                    />
+                                ))}
+                            </SortableContext>
+                        </DndContext>
                     </div>
                 </div>
 
@@ -509,11 +661,11 @@ export default function SettingsPage() {
                 {/* Journal Settings Section */}
                 <div className="space-y-4">
                     <div className="px-1">
-                        <h3 className="font-semibold text-lg">Journal Settings</h3>
-                        <p className="text-sm text-muted-foreground">Customize the appearance of the Journal View.</p>
+                        <h3 className="font-semibold text-lg">{t('settings.journal.title')}</h3>
+                        <p className="text-sm text-muted-foreground">{t('settings.journal.description')}</p>
                     </div>
                     <div className="p-4 bg-card border rounded-xl space-y-3">
-                        <label className="text-sm font-medium">Max Thumbnail Size (px)</label>
+                        <label className="text-sm font-medium">{t('settings.journal.thumbnailSize')}</label>
                         <div className="flex items-center gap-3">
 
                             <div className="flex items-center gap-3">
@@ -527,6 +679,41 @@ export default function SettingsPage() {
 
                                 <ApplyButton t={t} tempThumbnailSize={tempThumbnailSize} />
                             </div>
+                        </div>
+                    </div>
+                </div>
+                <div className="border-b border-dashed border-border" />
+
+                {/* Danger Zone */}
+                <div className="space-y-4">
+                    <div className="px-1">
+                        <h3 className="font-semibold text-lg text-destructive">{t('settings.danger.title')}</h3>
+                        <p className="text-sm text-muted-foreground">{t('settings.danger.description')}</p>
+                    </div>
+                    <div className="p-4 bg-destructive/5 border border-destructive/20 rounded-xl space-y-4">
+                        <div className="flex items-center justify-between">
+                            <div className="space-y-0.5">
+                                <Label className="text-base font-medium">{t('settings.danger.resetData')}</Label>
+                                <p className="text-sm text-muted-foreground">
+                                    {t('settings.danger.resetDataDesc')}
+                                </p>
+                            </div>
+                            <Button
+                                variant="destructive"
+                                onClick={() => {
+                                    if (confirm(t('settings.danger.confirmReset'))) {
+                                        setIsSaving(true);
+                                        resetUserData().then(() => {
+                                            window.location.reload();
+                                        }).finally(() => {
+                                            setIsSaving(false);
+                                        });
+                                    }
+                                }}
+                                disabled={isSaving}
+                            >
+                                {isSaving ? t('actions.deleting') : t('settings.danger.resetData')}
+                            </Button>
                         </div>
                     </div>
                 </div>
@@ -596,7 +783,7 @@ export default function SettingsPage() {
                                                             >
                                                                 <type.icon className="w-5 h-5 text-muted-foreground" />
                                                                 <div className="flex flex-col">
-                                                                    <span className="font-medium text-base">{type.label}</span>
+                                                                    <span className="font-medium text-base">{t(`settings.fields.types.${type.value}`) || type.label}</span>
                                                                 </div>
                                                                 <Check
                                                                     className={cn(
@@ -613,12 +800,24 @@ export default function SettingsPage() {
                                     </Popover>
                                 </div>
 
+                                {(newType === 'select' || newType === 'multiselect') && (
+                                    <div className="space-y-3">
+                                        <Label>{t('settings.fields.options') || 'Options'}</Label>
+                                        <Input
+                                            placeholder={t('settings.fields.optionsPlaceholder') || 'Option 1, Option 2, Option 3'}
+                                            value={newOptions}
+                                            onChange={(e) => setNewOptions(e.target.value)}
+                                        />
+                                        <p className="text-sm text-muted-foreground">{t('settings.fields.optionsHelp') || 'Separate options with commas'}</p>
+                                    </div>
+                                )}
+
                                 {(newType === 'time' || newType === 'date') && (
                                     <div className="flex items-center justify-between p-4 border rounded-lg bg-card/50">
                                         <div className="space-y-0.5">
-                                            <Label className="text-base">Enable Notification</Label>
+                                            <Label className="text-base">{t('settings.fields.notifications.enable')}</Label>
                                             <p className="text-sm text-muted-foreground">
-                                                Receive an alert at the specified {newType}.
+                                                {t('settings.fields.notifications.description', { type: t(`settings.fields.types.${newType}`) })}
                                             </p>
                                         </div>
                                         <Switch
@@ -852,6 +1051,7 @@ export default function SettingsPage() {
                                                                                         setEditingFieldId(customField.originalId);
                                                                                         setNewLabel(customField.label);
                                                                                         setNewType(customField.type);
+                                                                                        setNewOptions(customField.options?.join(', ') || '');
                                                                                         setSheetMode('edit_field');
                                                                                     }
                                                                                 }}

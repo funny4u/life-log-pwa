@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CalendarIcon, Copy, X, Trash2, Save, Circle, Clock, CheckCircle2 } from 'lucide-react';
+import { CalendarIcon, Copy, X, Trash2, Save, Circle, Clock, CheckCircle2, Check } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -300,12 +301,12 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent side="bottom" className="h-[90vh] sm:max-w-md rounded-t-[10px] pb-safe overflow-hidden">
+            <SheetContent side="bottom" className="h-[90vh] sm:max-w-md rounded-t-[10px] pb-safe overflow-hidden" onOpenAutoFocus={(e) => e.preventDefault()}>
                 <SheetHeader className="mb-2 text-left">
                     <SheetTitle>{selectedLog ? t('actions.editLog') : t('actions.newLog')}</SheetTitle>
                 </SheetHeader>
 
-                <div className="flex-1 grid gap-4 py-0 pt-2 overflow-y-auto px-1 pb-24" style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}>
+                <div className="flex-1 grid gap-2 py-0 pt-2 overflow-y-auto px-1 pb-24" style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}>
                     <div className="grid gap-2">
                         <Label htmlFor="title">{t('fields.title')}</Label>
                         <Input
@@ -347,7 +348,7 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
                     {/* Dynamic Fields (Ordered) */}
                     {(() => {
                         const currentCat = categoriesList.find(c => c.name === category);
-                        const orderedIds = currentCat?.settings?.visible_fields || [];
+                        const orderedIds = Array.from(new Set(currentCat?.settings?.visible_fields || []));
 
                         return orderedIds.map(fieldId => {
                             // Standard Fields
@@ -671,6 +672,51 @@ export function LogDrawer({ open, onOpenChange }: LogDrawerProps) {
                                                     checked={!!customData[field.key_name]}
                                                     onCheckedChange={(checked) => setCustomData({ ...customData, [field.key_name]: checked })}
                                                 />
+                                            </div>
+                                        )}
+                                        {field.type === 'select' && (
+                                            <Select
+                                                value={customData[field.key_name] || ''}
+                                                onValueChange={(val) => setCustomData({ ...customData, [field.key_name]: val })}
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Select..." />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {(field.options || []).map((opt) => (
+                                                        <SelectItem key={opt} value={opt}>
+                                                            {opt}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        )}
+                                        {field.type === 'multiselect' && (
+                                            <div className="flex flex-wrap gap-2">
+                                                {(field.options || []).map((opt) => {
+                                                    const value = customData[field.key_name] || [];
+                                                    const isSelected = Array.isArray(value) && value.includes(opt);
+                                                    return (
+                                                        <Badge
+                                                            key={opt}
+                                                            variant={isSelected ? 'default' : 'outline'}
+                                                            className={cn(
+                                                                "cursor-pointer py-1.5 px-3 text-xs rounded-full transition-all",
+                                                                isSelected ? "bg-primary text-primary-foreground shadow-sm" : "hover:bg-muted"
+                                                            )}
+                                                            onClick={(e) => {
+                                                                e.preventDefault();
+                                                                const current = Array.isArray(value) ? value : [];
+                                                                const next = isSelected
+                                                                    ? current.filter((i: string) => i !== opt)
+                                                                    : [...current, opt];
+                                                                setCustomData({ ...customData, [field.key_name]: next });
+                                                            }}
+                                                        >
+                                                            {opt}
+                                                        </Badge>
+                                                    );
+                                                })}
                                             </div>
                                         )}
                                         {/* Fallback for other types */}

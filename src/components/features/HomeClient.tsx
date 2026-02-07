@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Log, Category, AppMode } from '@/lib/types';
 import { useLanguage } from '@/components/providers/LanguageProvider';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { TopBar } from '@/components/layout/TopBar';
 import { LogListView } from '@/components/features/LogList';
 import { GalleryView } from '@/components/features/GalleryView';
@@ -20,6 +21,7 @@ import {
 } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
+import { OnboardingGuide } from '@/components/features/OnboardingGuide';
 
 interface HomeClientProps {
     initialLogs: Log[];
@@ -31,6 +33,9 @@ export function HomeClient({ initialLogs, categories }: HomeClientProps) {
     const [viewMode, setViewMode] = useState<'list' | 'gallery' | 'table' | 'feed' | 'calendar' | 'board'>('list');
     const [appMode, setAppMode] = useState<AppMode>('all');
 
+    // Onboarding State
+    const [hasDismissedOnboarding, setHasDismissedOnboarding] = useState(false);
+
     // Selection State
     const [isSelectionMode, setIsSelectionMode] = useState(false);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -38,7 +43,23 @@ export function HomeClient({ initialLogs, categories }: HomeClientProps) {
     const [showFilterBar, setShowFilterBar] = useState(false);
 
     // Filter & Sort State
-    const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
+    const searchParams = useSearchParams();
+    const router = useRouter(); // Use router to update URL
+    const pathname = usePathname();
+
+    const categoryFilter = searchParams.get('category');
+
+    // Helper to update URL
+    const setCategoryFilter = (category: string | null) => {
+        const params = new URLSearchParams(searchParams.toString());
+        if (category) {
+            params.set('category', category);
+        } else {
+            params.delete('category');
+        }
+        router.push(`${pathname}?${params.toString()}`);
+    };
+
     const [sortConfig, setSortConfig] = useState<{ key: 'date' | 'amount'; direction: 'asc' | 'desc' }>({ key: 'date', direction: 'desc' });
 
     // Mode Switching Effect
@@ -356,13 +377,17 @@ export function HomeClient({ initialLogs, categories }: HomeClientProps) {
             {/* List/Gallery Content */}
             <div className="flex-1 overflow-y-auto w-full">
                 {viewMode === 'list' ? (
-                    <LogListView
-                        logs={filteredLogs}
-                        categoryMap={categoryMap}
-                        isSelectionMode={isSelectionMode}
-                        selectedIds={selectedIds}
-                        onToggleSelection={toggleItemSelection}
-                    />
+                    initialLogs.length === 0 && !hasDismissedOnboarding && !categoryFilter ? (
+                        <OnboardingGuide onComplete={() => setHasDismissedOnboarding(true)} />
+                    ) : (
+                        <LogListView
+                            logs={filteredLogs}
+                            categoryMap={categoryMap}
+                            isSelectionMode={isSelectionMode}
+                            selectedIds={selectedIds}
+                            onToggleSelection={toggleItemSelection}
+                        />
+                    )
                 ) : viewMode === 'gallery' ? (
                     <GalleryView logs={filteredLogs} categoryMap={categoryMap} />
                 ) : viewMode === 'feed' ? (
