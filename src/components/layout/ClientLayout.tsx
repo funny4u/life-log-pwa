@@ -11,7 +11,12 @@ import { Sidebar } from './Sidebar';
 import { NotificationManager } from '../features/NotificationManager';
 
 function ClientLayoutContent({ children }: { children: React.ReactNode }) {
+    const [mounted, setMounted] = React.useState(false);
     const { isDrawerOpen, closeDrawer } = useLogContext();
+
+    React.useEffect(() => {
+        setMounted(true);
+    }, []);
     const pathname = usePathname();
     const isAuthPage = pathname?.startsWith('/login') || pathname?.startsWith('/auth');
 
@@ -34,11 +39,15 @@ function ClientLayoutContent({ children }: { children: React.ReactNode }) {
                 {children}
             </main>
 
-            <LogDrawer open={isDrawerOpen} onOpenChange={(open) => !open && closeDrawer()} />
-            <BottomNav />
-            <Suspense fallback={null}>
-                <Sidebar />
-            </Suspense>
+            {mounted && (
+                <>
+                    <LogDrawer open={isDrawerOpen} onOpenChange={(open) => !open && closeDrawer()} />
+                    <BottomNav />
+                    <Suspense fallback={null}>
+                        <Sidebar />
+                    </Suspense>
+                </>
+            )}
         </div>
     );
 }
