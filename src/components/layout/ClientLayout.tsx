@@ -13,22 +13,25 @@ import { cn } from '@/lib/utils';
 
 function ClientLayoutContent({ children }: { children: React.ReactNode }) {
     const [mounted, setMounted] = React.useState(false);
+    const [isAuthPage, setIsAuthPage] = React.useState(false);
     const { isDrawerOpen, closeDrawer } = useLogContext();
     const pathname = usePathname();
 
     React.useEffect(() => {
         setMounted(true);
-        console.log('ClientLayout mounted. Path:', pathname);
-        // Force SW update if available
+        // Direct browser check for auth pages to avoid hook inconsistencies
+        const path = window.location.pathname;
+        const isAuth = /^\/(login|auth|signup)/.test(path);
+        setIsAuthPage(isAuth);
+
+        console.log('Layout mounted. Path:', path, 'isAuth:', isAuth);
+
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.ready.then(registration => {
                 registration.update();
             });
         }
     }, [pathname]);
-
-    // Robust check for auth-related pages (login, signup, callback etc)
-    const isAuthPage = pathname ? /^\/(login|auth|signup)/.test(pathname) : false;
 
     return (
         <div className="flex flex-col h-[100dvh] w-full bg-background relative overflow-hidden">
