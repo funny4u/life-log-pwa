@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { ClientLayout } from "@/components/layout/ClientLayout";
 import "./globals.css";
+import { AppProviders } from "@/components/providers/AppProviders";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,8 +32,6 @@ export const viewport: Viewport = {
   userScalable: false,
 };
 
-import { LanguageProvider } from "@/components/providers/LanguageProvider";
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -45,11 +43,9 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased h-full w-full overflow-hidden`}
         suppressHydrationWarning
       >
-        <LanguageProvider>
-          <ClientLayout>
-            {children}
-          </ClientLayout>
-        </LanguageProvider>
+        <AppProviders>
+          {children}
+        </AppProviders>
       </body>
     </html>
   );
